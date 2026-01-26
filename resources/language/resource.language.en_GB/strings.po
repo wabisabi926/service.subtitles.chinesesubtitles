@@ -1,0 +1,200 @@
+msgid ""
+msgstr ""
+
+msgctxt "#30100"
+msgid "General"
+msgstr ""
+
+msgctxt "#30200"
+msgid "Subtitle Filters"
+msgstr ""
+
+msgctxt "#30250"
+msgid "Source Filters"
+msgstr ""
+
+msgctxt "#30251"
+msgid "Language Filters"
+msgstr ""
+
+msgctxt "#30252"
+msgid "Format Filters"
+msgstr ""
+
+
+
+
+
+msgctxt "#30240"
+msgid "Include year in search"
+msgstr ""
+
+
+
+msgctxt "#30300"
+msgid "Proxy"
+msgstr ""
+
+msgctxt "#30310"
+msgid "Use Kodi proxy settings"
+msgstr ""
+
+msgctxt "#30311"
+msgid "Enable custom proxy"
+msgstr ""
+
+msgctxt "#30312"
+msgid "Proxy server URL"
+msgstr ""
+
+msgctxt "#30901"
+msgid "Choose subtitle"
+msgstr ""
+
+msgctxt "#30260"
+msgid "Only show bilingual subtitles"
+msgstr ""
+
+msgctxt "#30261"
+msgid "Include ASS format"
+msgstr ""
+
+msgctxt "#30262"
+msgid "Include SRT format"
+msgstr ""
+
+msgctxt "#30263"
+msgid "Include SSA format"
+msgstr ""
+
+msgctxt "#30264"
+msgid "Include SUB format"
+msgstr ""
+
+msgctxt "#30265"
+msgid "Include SUP format"
+msgstr ""
+
+msgctxt "#30266"
+msgid "Include VTT format"
+msgstr ""
+
+msgctxt "#30270"
+msgid "Include Official translations"
+msgstr ""
+
+msgctxt "#30271"
+msgid "Include Reprint/Remux translations"
+msgstr ""
+
+msgctxt "#30272"
+msgid "Include Original translations"
+msgstr ""
+
+msgctxt "#30273"
+msgid "Include AI-assisted translations"
+msgstr ""
+
+msgctxt "#30274"
+msgid "Include Machine translations"
+msgstr ""
+
+msgctxt "#30280"
+msgid "Include Simplified Chinese"
+msgstr "Include Simplified Chinese"
+
+msgctxt "#30281"
+msgid "Include Traditional Chinese"
+msgstr "Include Traditional Chinese"
+
+msgctxt "#30282"
+msgid "Include English"
+msgstr "Include English"
+
+msgctxt "#30410"
+msgid "Add the year to the search query for more accurate matches."
+msgstr ""
+
+msgctxt "#30412"
+msgid "Use Kodi's global proxy settings."
+msgstr ""
+
+msgctxt "#30413"
+msgid "Enable a custom proxy for this add-on."
+msgstr ""
+
+msgctxt "#30414"
+msgid "Format: protocol://user:pass@host:port"
+msgstr ""
+
+msgctxt "#30420"
+msgid "Show only bilingual subtitles (for example, Chinese plus English)."
+msgstr ""
+
+msgctxt "#30430"
+msgid "Include official translations from verified sources."
+msgstr ""
+
+msgctxt "#30431"
+msgid "Include community reprints or remuxed subtitles."
+msgstr ""
+
+msgctxt "#30432"
+msgid "Include original fan-made translations."
+msgstr ""
+
+msgctxt "#30433"
+msgid "Include AI-assisted translations."
+msgstr ""
+
+msgctxt "#30434"
+msgid "Include machine-translated subtitles."
+msgstr ""
+
+msgctxt "#30440"
+msgid "Show subtitles that include Simplified Chinese."
+msgstr ""
+
+msgctxt "#30441"
+msgid "Show subtitles that include Traditional Chinese."
+msgstr ""
+
+msgctxt "#30442"
+msgid "Show subtitles that include English."
+msgstr ""
+
+msgctxt "#30450"
+msgid "Show subtitles in ASS format."
+msgstr ""
+
+msgctxt "#30451"
+msgid "Show subtitles in SRT format."
+msgstr ""
+
+msgctxt "#30452"
+msgid "Show subtitles in SSA format."
+msgstr ""
+
+msgctxt "#30453"
+msgid "Show subtitles in SUB format."
+msgstr ""
+
+msgctxt "#30454"
+msgid "Show subtitles in SUP format."
+msgstr ""
+
+msgctxt "#30455"
+msgid "Show subtitles in VTT format."
+msgstr ""
+
+msgctxt "#30320"
+msgid "Display Settings"
+msgstr ""
+
+msgctxt "#30321"
+msgid "Cut duplicated part of sub filename"
+msgstr ""
+
+msgctxt "#30421"
+msgid "When selecting from multiple subtitles, hide the common prefix to avoid scrolling"
+msgstr ""

@@ -1,0 +1,124 @@
+msgid ""
+msgstr ""
+
+msgctxt "#30100"
+msgid "General Settings"
+msgstr "通用设置"
+
+msgctxt "#30200"
+msgid "Sub preference"
+msgstr "字幕下载偏好"
+
+
+
+
+
+msgctxt "#30240"
+msgid "Use year to make search result more accurate"
+msgstr "使用年份信息让搜索结果更精确"
+
+
+
+msgctxt "#30300"
+msgid "Proxy Settings"
+msgstr "代理服务器设置"
+
+msgctxt "#30310"
+msgid "Follow kodi proxy settings"
+msgstr "使用 Kodi 的代理设置"
+
+msgctxt "#30311"
+msgid "Use proxy"
+msgstr "另行指定代理服务器"
+
+msgctxt "#30312"
+msgid "Proxy server"
+msgstr "代理服务器信息"
+
+msgctxt "#30901"
+msgid "Choose subtitle"
+msgstr "请选择压缩包中的字幕"
+
+msgctxt "#30260"
+msgid "Only show bilingual subtitles"
+msgstr "仅显示双语字幕"
+
+msgctxt "#30261"
+msgid "Include ASS"
+msgstr "包含 ASS 格式"
+
+msgctxt "#30262"
+msgid "Include SRT"
+msgstr "包含 SRT 格式"
+
+msgctxt "#30263"
+msgid "Include SSA"
+msgstr "包含 SSA 格式"
+
+msgctxt "#30264"
+msgid "Include SUB"
+msgstr "包含 SUB 格式"
+
+msgctxt "#30265"
+msgid "Include SUP"
+msgstr "包含 SUP 格式"
+
+msgctxt "#30266"
+msgid "Include VTT"
+msgstr "包含 VTT 格式"
+
+msgctxt "#30270"
+msgid "Include Official"
+msgstr "包含 官方译本"
+
+msgctxt "#30271"
+msgid "Include Reprint/Remux"
+msgstr "包含 转载精修"
+
+msgctxt "#30272"
+msgid "Include Original"
+msgstr "包含 原创翻译"
+
+msgctxt "#30273"
+msgid "Include AI"
+msgstr "包含 AI 翻译"
+
+msgctxt "#30274"
+msgid "Include Machine Translation"
+msgstr "包含 机器翻译"
+
+msgctxt "#30280"
+msgid "Include Simplified Chinese"
+msgstr "包含 简体中文"
+
+msgctxt "#30281"
+msgid "Include Traditional Chinese"
+msgstr "包含 繁体中文"
+
+msgctxt "#30282"
+msgid "Include English"
+msgstr "包含 英语"
+
+msgctxt "#30320"
+msgid "Display Settings"
+msgstr "显示设置"
+
+msgctxt "#30321"
+msgid "Cut duplicated part of sub filename"
+msgstr "隐藏文件名相同的部分，防止过长滚动"
+
+msgctxt "#30421"
+msgid "When selecting from multiple subtitles, hide the common prefix to avoid scrolling"
+msgstr "选择字幕时，隐藏相同前缀避免文件名过长滚动"
+
+msgctxt "#30250"
+msgid "Source Filters"
+msgstr "来源过滤"
+
+msgctxt "#30251"
+msgid "Language Filters"
+msgstr "语言过滤"
+
+msgctxt "#30252"
+msgid "Format Filters"
+msgstr "格式过滤"

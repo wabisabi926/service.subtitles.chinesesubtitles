@@ -1,0 +1,136 @@
+<?xml version="1.0" ?>
+<settings version="1">
+    <level>0</level>
+	<section id="service.subtitles.chinesesubtitles">
+		<category id="general" label="30100" help="">
+
+            <group id="2" label="30300"> <!-- Proxy -->
+                <setting id="proxy_follow_kodi" type="boolean" label="30310" help="30412">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="proxy_use" type="boolean" label="30311" help="30413">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+					<dependencies>
+						<dependency type="enable" setting="proxy_follow_kodi">false</dependency>
+					</dependencies>
+				</setting>
+                <setting id="proxy_server" type="string" label="30312" help="30414">
+                	<level>0</level>
+					<control type="edit" format="string">
+						<heading>30312</heading>
+					</control>
+                	<default>protocol://[user:pass@]host:port</default>
+                	<constraints>
+                		<allowempty>true</allowempty>
+                	</constraints>
+					<dependencies>
+						<dependency type="enable">
+							<and>
+								<condition setting="proxy_follow_kodi">false</condition>
+								<condition setting="proxy_use">true</condition>
+							</and>
+						</dependency>
+					</dependencies>
+                </setting>
+            </group>
+
+            <group id="3" label="30320"> <!-- Display -->
+                <setting id="cutsubfn" type="boolean" label="30321" help="30421">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+            </group>
+		</category>
+        
+		<category id="filter" label="30200" help="">
+			<group id="1" label="30251"> <!-- Language Filters -->
+                <setting id="filter_lang_chs" type="boolean" label="30280" help="30440">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+                <setting id="filter_lang_cht" type="boolean" label="30281" help="30441">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+                <setting id="filter_lang_eng" type="boolean" label="30282" help="30442">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+                <setting id="filter_bilingual" type="boolean" label="30260" help="30420">
+					<level>0</level>
+					<default>false</default>
+					<control type="toggle"/>
+				</setting>
+			</group>
+
+			<group id="2" label="30250"> <!-- Source Filters -->
+                <setting id="filter_src_official" type="boolean" label="30270" help="30430">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+                <setting id="filter_src_reprint" type="boolean" label="30271" help="30431">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+                <setting id="filter_src_original" type="boolean" label="30272" help="30432">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+                <setting id="filter_src_ai" type="boolean" label="30273" help="30433">
+					<level>0</level>
+					<default>false</default>
+					<control type="toggle"/>
+				</setting>
+                <setting id="filter_src_machine" type="boolean" label="30274" help="30434">
+					<level>0</level>
+					<default>false</default>
+					<control type="toggle"/>
+				</setting>
+            </group>
+
+            <group id="3" label="30252"> <!-- Format Filters -->
+                <setting id="filter_fmt_ass" type="boolean" label="30261" help="30450">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+                <setting id="filter_fmt_srt" type="boolean" label="30262" help="30451">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+                <setting id="filter_fmt_ssa" type="boolean" label="30263" help="30452">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+                <setting id="filter_fmt_sub" type="boolean" label="30264" help="30453">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+                <setting id="filter_fmt_sup" type="boolean" label="30265" help="30454">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+                <setting id="filter_fmt_vtt" type="boolean" label="30266" help="30455">
+					<level>0</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+            </group>
+		</category>
+	</section>
+</settings>
