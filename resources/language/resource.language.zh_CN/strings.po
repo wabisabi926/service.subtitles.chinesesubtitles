@@ -2,102 +2,190 @@ msgid ""
 msgstr ""
 
 msgctxt "#30100"
-msgid "General Settings"
-msgstr "通用设置"
+msgid "General"
+msgstr "常规"
 
 msgctxt "#30200"
-msgid "Sub preference"
-msgstr "字幕下载偏好"
+msgid "Subtitle Filters"
+msgstr "字幕筛选"
+
+msgctxt "#30250"
+msgid "Source Filters"
+msgstr "来源筛选"
+
+msgctxt "#30251"
+msgid "Language Filters"
+msgstr "语言筛选"
+
+msgctxt "#30252"
+msgid "Format Filters"
+msgstr "格式筛选"
 
 
 
 
 
 msgctxt "#30240"
-msgid "Use year to make search result more accurate"
-msgstr "使用年份信息让搜索结果更精确"
+msgid "Include year in search"
+msgstr "搜索时包含年份"
 
 
 
 msgctxt "#30300"
-msgid "Proxy Settings"
-msgstr "代理服务器设置"
+msgid "Proxy"
+msgstr "代理"
 
 msgctxt "#30310"
-msgid "Follow kodi proxy settings"
-msgstr "使用 Kodi 的代理设置"
+msgid "Use Kodi proxy settings"
+msgstr "使用 Kodi 全局代理设置"
 
 msgctxt "#30311"
-msgid "Use proxy"
-msgstr "另行指定代理服务器"
+msgid "Enable custom proxy"
+msgstr "启用自定义代理"
 
 msgctxt "#30312"
-msgid "Proxy server"
-msgstr "代理服务器信息"
+msgid "Proxy server URL"
+msgstr "代理服务器地址"
 
 msgctxt "#30901"
 msgid "Choose subtitle"
-msgstr "请选择压缩包中的字幕"
+msgstr "选择字幕"
 
 msgctxt "#30260"
 msgid "Only show bilingual subtitles"
 msgstr "仅显示双语字幕"
 
 msgctxt "#30261"
-msgid "Include ASS"
+msgid "Include ASS format"
 msgstr "包含 ASS 格式"
 
 msgctxt "#30262"
-msgid "Include SRT"
+msgid "Include SRT format"
 msgstr "包含 SRT 格式"
 
 msgctxt "#30263"
-msgid "Include SSA"
+msgid "Include SSA format"
 msgstr "包含 SSA 格式"
 
 msgctxt "#30264"
-msgid "Include SUB"
+msgid "Include SUB format"
 msgstr "包含 SUB 格式"
 
 msgctxt "#30265"
-msgid "Include SUP"
+msgid "Include SUP format"
 msgstr "包含 SUP 格式"
 
 msgctxt "#30266"
-msgid "Include VTT"
+msgid "Include VTT format"
 msgstr "包含 VTT 格式"
 
 msgctxt "#30270"
-msgid "Include Official"
-msgstr "包含 官方译本"
+msgid "Include Official translations"
+msgstr "包含官方翻译"
 
 msgctxt "#30271"
-msgid "Include Reprint/Remux"
-msgstr "包含 转载精修"
+msgid "Include Reprint/Remux translations"
+msgstr "包含重制/重混翻译"
 
 msgctxt "#30272"
-msgid "Include Original"
-msgstr "包含 原创翻译"
+msgid "Include Original translations"
+msgstr "包含原创翻译"
 
 msgctxt "#30273"
-msgid "Include AI"
-msgstr "包含 AI 翻译"
+msgid "Include AI-assisted translations"
+msgstr "包含AI辅助翻译"
 
 msgctxt "#30274"
-msgid "Include Machine Translation"
-msgstr "包含 机器翻译"
+msgid "Include Machine translations"
+msgstr "包含机器翻译"
 
 msgctxt "#30280"
 msgid "Include Simplified Chinese"
-msgstr "包含 简体中文"
+msgstr "包含简体中文"
 
 msgctxt "#30281"
 msgid "Include Traditional Chinese"
-msgstr "包含 繁体中文"
+msgstr "包含繁体中文"
 
 msgctxt "#30282"
 msgid "Include English"
-msgstr "包含 英语"
+msgstr "包含英语"
+
+msgctxt "#30410"
+msgid "Add the year to the search query for more accurate matches."
+msgstr "在搜索关键词中加入年份，提升匹配精准度。"
+
+msgctxt "#30412"
+msgid "Use Kodi's global proxy settings."
+msgstr "使用 Kodi 的全局代理设置。"
+
+msgctxt "#30413"
+msgid "Enable a custom proxy for this add-on."
+msgstr "为该插件启用自定义代理。"
+
+msgctxt "#30414"
+msgid "Format: protocol://user:pass@host:port"
+msgstr "格式：协议://用户名:密码@主机:端口"
+
+msgctxt "#30420"
+msgid "Show only bilingual subtitles (for example, Chinese plus English)."
+msgstr "仅显示双语字幕（例如中英双语）。"
+
+msgctxt "#30430"
+msgid "Include official translations from verified sources."
+msgstr "包含可信来源的官方翻译字幕。"
+
+msgctxt "#30431"
+msgid "Include community reprints or remuxed subtitles."
+msgstr "包含社区重制或重混字幕。"
+
+msgctxt "#30432"
+msgid "Include original fan-made translations."
+msgstr "包含爱好者原创翻译字幕。"
+
+msgctxt "#30433"
+msgid "Include AI-assisted translations."
+msgstr "包含AI辅助翻译字幕。"
+
+msgctxt "#30434"
+msgid "Include machine-translated subtitles."
+msgstr "包含机器翻译字幕。"
+
+msgctxt "#30440"
+msgid "Show subtitles that include Simplified Chinese."
+msgstr "显示含简体中文的字幕。"
+
+msgctxt "#30441"
+msgid "Show subtitles that include Traditional Chinese."
+msgstr "显示含繁体中文的字幕。"
+
+msgctxt "#30442"
+msgid "Show subtitles that include English."
+msgstr "显示含英语的字幕。"
+
+msgctxt "#30450"
+msgid "Show subtitles in ASS format."
+msgstr "显示 ASS 格式的字幕。"
+
+msgctxt "#30451"
+msgid "Show subtitles in SRT format."
+msgstr "显示 SRT 格式的字幕。"
+
+msgctxt "#30452"
+msgid "Show subtitles in SSA format."
+msgstr "显示 SSA 格式的字幕。"
+
+msgctxt "#30453"
+msgid "Show subtitles in SUB format."
+msgstr "显示 SUB 格式的字幕。"
+
+msgctxt "#30454"
+msgid "Show subtitles in SUP format."
+msgstr "显示 SUP 格式的字幕。"
+
+msgctxt "#30455"
+msgid "Show subtitles in VTT format."
+msgstr "显示 VTT 格式的字幕。"
 
 msgctxt "#30320"
 msgid "Display Settings"
@@ -105,20 +193,8 @@ msgstr "显示设置"
 
 msgctxt "#30321"
 msgid "Cut duplicated part of sub filename"
-msgstr "隐藏文件名相同的部分，防止过长滚动"
+msgstr "去除字幕文件名重复部分"
 
 msgctxt "#30421"
 msgid "When selecting from multiple subtitles, hide the common prefix to avoid scrolling"
-msgstr "选择字幕时，隐藏相同前缀避免文件名过长滚动"
-
-msgctxt "#30250"
-msgid "Source Filters"
-msgstr "来源过滤"
-
-msgctxt "#30251"
-msgid "Language Filters"
-msgstr "语言过滤"
-
-msgctxt "#30252"
-msgid "Format Filters"
-msgstr "格式过滤"
+msgstr "多选字幕时隐藏公共前缀，避免横向滚动"
