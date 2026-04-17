@@ -21,15 +21,9 @@ msgctxt "#30252"
 msgid "Format Filters"
 msgstr ""
 
-
-
-
-
 msgctxt "#30240"
 msgid "Include year in search"
 msgstr ""
-
-
 
 msgctxt "#30300"
 msgid "Proxy"
