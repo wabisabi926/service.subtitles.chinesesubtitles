@@ -21,15 +21,9 @@ msgctxt "#30252"
 msgid "Format Filters"
 msgstr "格式筛选"
 
-
-
-
-
 msgctxt "#30240"
 msgid "Include year in search"
 msgstr "搜索时包含年份"
-
-
 
 msgctxt "#30300"
 msgid "Proxy"
@@ -93,7 +87,7 @@ msgstr "包含原创翻译"
 
 msgctxt "#30273"
 msgid "Include AI-assisted translations"
-msgstr "包含AI辅助翻译"
+msgstr "包含 AI 辅助翻译"
 
 msgctxt "#30274"
 msgid "Include Machine translations"
