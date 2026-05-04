@@ -1,26 +1,38 @@
 # ChineseSubtitles
 
-ChineseSubtitles 是一个专为 Kodi 21+ 设计的字幕源插件，帮助你在 SubHD 和 Zimuku 上查找并下载中文字幕。
-
-本插件主要面向中文用户，故使用中文撰写。
+Kodi 21+ 用的中文字幕插件，目前支持从 SubHD 和 Zimuku 搜索、下载字幕。
 
 ## 使用流程
-1. 在 Kodi 中找到要看的电影或电视剧并开始播放。
-2. 播放过程中打开“字幕下载”界面，选择 ChineseSubtitles。
-3. 插件会根据当前播放内容的标题、年份、季/集（season/episode）等信息，先给出可能匹配的影视条目供你确认。
-4. 确认条目后，会看到可下载的字幕列表；选中你需要的字幕条目。
-5. 插件会下载对应的字幕包并自动解压，然后列出其中的字幕文件。
-6. 从解压后的文件列表中选择要使用的字幕文件，字幕即会加载到播放中。
+1. 播放电影或电视剧。
+2. 打开字幕下载界面，选择 ChineseSubtitles。
+3. 从搜索结果中确认影视条目。
+4. 选择要下载的字幕。
+5. 如果字幕包含多个文件，再选择具体使用哪个。
 
-## 额外提醒
-- 建议影片信息先完成刮削（确保片名/年份/季度/集等信息正确），这样匹配会更准；如果识别不对，可以在字幕下载界面使用“手动搜索”自行输入关键词再搜。
+## 安装
+推荐通过仓库安装，以便接收后续更新。
+
+1. 在 Kodi 设置的 File manager 中选择 Add source，通过 Add network location 添加地址：
+   ```
+   Protocol:       Web server directory (HTTPS)
+   Server address: qzydustin.github.io
+   Remote path:    service.subtitles.chinesesubtitles
+   Port:           443
+   ```
+2. 在 Kodi 设置中进入 Add-ons，选择 `Install from zip file`，从刚添加的源中安装 `repository.chinesesubtitles-*.zip`。
+3. 安装完成后，选择 `Install from repository` → `ChineseSub Repository`，安装 ChineseSub。
+
+也可以从[下载页面](https://qzydustin.github.io/service.subtitles.chinesesubtitles/)底部直接下载安装包。
+
+## 提醒
+- 建议先完成影片刮削，确保片名、年份、季/集等信息正确，匹配会更准。识别不对时可以用手动搜索。
 
 ## 许可
 - GPL-2.0-or-later（见 `LICENSE`）
 
 ## 致谢
-- 感谢 `svg-captcha-recognize`(https://github.com/haua/svg-captcha-recognize) 对 SubHD 验证码处理的启发。  
-- 感谢 `zimuku_for_kodi`(https://github.com/pizzamx/zimuku_for_kodi) 帮助理解 Zimuku 的站点流程。
+- 感谢 [`svg-captcha-recognize`](https://github.com/haua/svg-captcha-recognize) 对 SubHD 验证码处理的启发。
+- 感谢 [`zimuku_for_kodi`](https://github.com/pizzamx/zimuku_for_kodi) 帮助理解 Zimuku 的站点流程。
 - 感谢 Zimuku 和 SubHD 提供的优质字幕，以及字幕作者的无偿奉献。
 
 ## 说明
