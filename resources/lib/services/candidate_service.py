@@ -3,6 +3,9 @@ def _get_zimuku_agent():
     from providers.zimuku.agent import ZimukuAgent
 
     class NullLogger:
+        def log(self, *args, **kwargs):
+            pass
+
         def debug(self, *args, **kwargs):
             pass
 
