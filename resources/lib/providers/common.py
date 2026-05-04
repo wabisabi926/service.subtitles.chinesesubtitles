@@ -86,6 +86,7 @@ def build_subtitle_label(tags, provider=None, filename=None):
     return final_label
 
 def save_and_unpack(download_location, unpacker, filename, data):
+    filename = os.path.basename(filename)
     filepath = os.path.join(download_location, filename)
     with open(filepath, 'wb') as f:
         f.write(data)
