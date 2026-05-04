@@ -109,7 +109,8 @@ class ZimukuAgent(BaseAgent):
         try:
             td = sub.find("td", class_="tac lang")
             if td: langs = [img.get('title', '').rstrip('字幕') for img in td.find_all("img")]
-        except Exception: pass
+        except Exception as e:
+            self.log(f"Failed to parse langs: {e}", 2)
         rating = "0"
         try:
             star = sub.find("i", class_="rating-star")
@@ -117,7 +118,8 @@ class ZimukuAgent(BaseAgent):
                 star_str = str(star)
                 idx = star_str.find("allstar")
                 if idx >= 0 and idx + 7 < len(star_str) and star_str[idx + 7].isdigit(): rating = star_str[idx + 7]
-        except Exception: pass
+        except Exception as e:
+            self.log(f"Failed to parse rating: {e}", 2)
         tags = {"source": [], "lang": [], "fmt": [], "bilingual": False, "production": production or "", "collection": bool(collection)}
         fmt_span = sub.find("span", class_="label-info")
         if fmt_span:
@@ -191,7 +193,9 @@ class ZimukuAgent(BaseAgent):
             if not links: return [], [], []
             links = links.find_all('a')
             referer = dl_url
-        except Exception: return [], [], []
+        except Exception as e:
+            self.log(f"Download page parse error: {e}", 2)
+            return [], [], []
         filename, file_data = None, None
         for link in links:
             href = link.get('href')
@@ -204,7 +208,8 @@ class ZimukuAgent(BaseAgent):
                 if not filename: continue
                 file_data = resp.content
                 if len(file_data) > self.FILE_MIN_SIZE: break
-            except Exception: pass
+            except Exception as e:
+                self.log(f"Failed to download from {file_url}: {e}", 2)
         if not filename or not file_data or len(file_data) <= self.FILE_MIN_SIZE: return [], [], []
         dot = filename.rfind(".")
         if dot != -1: filename = filename[:dot] + filename[dot:].lower()

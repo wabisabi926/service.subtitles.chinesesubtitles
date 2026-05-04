@@ -82,7 +82,8 @@ def Search(items):
     for provider, agent in agents.items():
         try:
             results = agent.search(items, candidate=candidate)
-        except Exception:
+        except Exception as e:
+            logger.log("Search", "Provider [%s] failed: %s" % (provider, e), level=xbmc.LOGWARNING)
             results = []
         for s in results or []:
             tags = s.get('tags', {})
