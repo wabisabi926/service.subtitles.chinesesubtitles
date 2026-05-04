@@ -1,4 +1,5 @@
 import sys
+import urllib.parse
 
 import xbmcgui
 import xbmcplugin
@@ -23,7 +24,7 @@ def add_subtitles(subtitle_list, scriptid):
         listitem.setProperty("sync", "false")
         listitem.setProperty("hearing_imp", "false")
 
-        url = "plugin://%s/?action=download&link=%s" % (scriptid, s["link"])
+        url = "plugin://%s/?action=download&link=%s" % (scriptid, urllib.parse.quote(s["link"], safe=''))
         if provider:
             url += f"&provider={provider}"
         xbmcplugin.addDirectoryItem(

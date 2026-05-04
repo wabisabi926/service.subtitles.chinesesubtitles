@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 import os
 import sys
+import urllib.parse
 
 import xbmc
 import xbmcaddon
@@ -108,21 +109,12 @@ def Download(url, provider=None):
 
 
 def get_params():
-    param = []
+    param = {}
     paramstring = sys.argv[2]
     if len(paramstring) >= 2:
-        params = paramstring
-        cleanedparams = params.replace('?', '')
-        if (params[len(params) - 1] == '/'):
-            params = params[0:len(params) - 2]
-        pairsofparams = cleanedparams.split('&')
-        param = {}
-        for i in range(len(pairsofparams)):
-            splitparams = {}
-            splitparams = pairsofparams[i].split('=')
-            if (len(splitparams)) == 2:
-                param[splitparams[0]] = splitparams[1]
-
+        parsed = urllib.parse.parse_qs(paramstring.lstrip('?'), keep_blank_values=True)
+        for key, values in parsed.items():
+            param[key] = values[0]
     return param
 
 
