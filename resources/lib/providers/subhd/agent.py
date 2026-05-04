@@ -105,7 +105,7 @@ class SubHDAgent(BaseAgent):
         api_url = self.BASE_URL + "/api/sub/down"
         try:
             payload = {"sid": sid, "cap": ""}
-            res = self.session.post(api_url, json=payload, headers={'Referer': down_url})
+            res = self.session.post(api_url, json=payload, headers={'Referer': down_url}, timeout=10)
             if res.status_code != 200: return [], [], []
             data = res.json()
             if data.get('pass') == False:
@@ -114,14 +114,14 @@ class SubHDAgent(BaseAgent):
                     from .captcha import SubHDSolver
                     code = SubHDSolver().solve(svg)
                     payload["cap"] = code
-                    res = self.session.post(api_url, json=payload, headers={'Referer': down_url})
+                    res = self.session.post(api_url, json=payload, headers={'Referer': down_url}, timeout=10)
                     data = res.json()
                     if not data.get('success'): return [], [], []
             if not data.get('success'): return [], [], []
             file_url = data.get('url')
             if not file_url: return [], [], []
             if not file_url.startswith('http'): file_url = self.BASE_URL + file_url
-            file_res = self.session.get(file_url, headers={'Referer': down_url})
+            file_res = self.session.get(file_url, headers={'Referer': down_url}, timeout=15)
             filename = get_filename_from_cd(file_res.headers.get("Content-Disposition"), url=file_res.url or file_url, default="subtitle.bin")
             return save_and_unpack(self.DOWNLOAD_LOCATION, self.unpacker, filename, file_res.content)
         except Exception as e:
