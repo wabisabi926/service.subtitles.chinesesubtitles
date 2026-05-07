@@ -102,11 +102,75 @@ def write_index_html():
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ChineseSub</title>
+  <title>ChineseSubtitles - Kodi 中文字幕插件</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.7;
+      color: #333;
+      background: #f7f8fa;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 3rem;
+    }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #1a1a2e; }
+    h2 { font-size: 1.4rem; margin-top: 2rem; margin-bottom: 0.8rem; color: #1a1a2e; border-bottom: 2px solid #e8e8e8; padding-bottom: 0.3rem; }
+    p, li { margin-bottom: 0.6rem; }
+    ul, ol { padding-left: 1.5rem; }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    pre {
+      background: #f4f4f8;
+      border: 1px solid #e2e2e8;
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-size: 0.9rem;
+      margin: 0.8rem 0;
+    }
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.9em;
+    }
+    :not(pre) > code {
+      background: #f0f0f5;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+    }
+    .downloads {
+      margin-top: 2rem;
+      background: #f0f7ff;
+      border: 1px solid #d0e3f7;
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+    .downloads h2 { border-bottom: none; margin-top: 0; color: #1a4a7a; }
+    .downloads li { margin-bottom: 0.4rem; }
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      color: #999;
+    }
+  </style>
 </head>
 <body>
+<div class="container">
 %s
+<div class="downloads">
 %s
+</div>
+<footer><a href="https://github.com/qzydustin/service.subtitles.chinesesubtitles">GitHub</a> &middot; ChineseSubtitles &copy; 2025</footer>
+</div>
 </body>
 </html>
 """ % (body, downloads)
