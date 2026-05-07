@@ -39,6 +39,10 @@ msgctxt "#30901"
 msgid "Choose subtitle"
 msgstr "请选择压缩包中的字幕"
 
+msgctxt "#30902"
+msgid "Invalid subtitle file, please choose another"
+msgstr "无效字幕，请选择其他字幕"
+
 msgctxt "#30260"
 msgid "Only show bilingual subtitles"
 msgstr "仅显示双语字幕"

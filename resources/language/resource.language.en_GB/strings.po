@@ -51,6 +51,10 @@ msgctxt "#30901"
 msgid "Choose subtitle"
 msgstr ""
 
+msgctxt "#30902"
+msgid "Invalid subtitle file, please choose another"
+msgstr ""
+
 msgctxt "#30260"
 msgid "Only show bilingual subtitles"
 msgstr ""
