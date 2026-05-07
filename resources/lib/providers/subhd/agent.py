@@ -73,9 +73,32 @@ class SubHDAgent(BaseAgent):
                 results.append(self._build_result(link.get_text().strip(), self.BASE_URL + href, tags))
         return results
 
+    def _resolve_imdb(self, imdb_id):
+        """Search SubHD by IMDB ID and return the internal subtitle page ID."""
+        search_url = f"{self.BASE_URL}/search/{imdb_id}"
+        content = self.get_page(search_url)
+        if not content:
+            return None
+        soup = BeautifulSoup(content, 'html.parser')
+        container = soup.select_one('div.col-lg-9')
+        if not container:
+            return None
+        link = container.select_one('a[href^="/d/"]')
+        if link:
+            m = re.search(r'/d/(\d+)', link['href'])
+            if m:
+                return m.group(1)
+        return None
+
     def search(self, items, candidate=None):
         """搜索字幕"""
         if not candidate or not candidate.get('id'): return []
+        if candidate.get('source') == 'imdb':
+            resolved_id = self._resolve_imdb(candidate['id'])
+            if not resolved_id:
+                self.log(f"SubHD: IMDB {candidate['id']} not found", 2)
+                return []
+            candidate = {**candidate, 'id': resolved_id}
         url = f"{self.BASE_URL}/d/{candidate.get('id')}"
         content = self.get_page(url)
         if not content: return []

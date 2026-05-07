@@ -156,9 +156,9 @@ class ZimukuAgent(BaseAgent):
         subs_url = candidate.get('zimuku_subs_url')
         production = "剧集" if candidate.get('type') == 'tv' or items.get('tvshow') else "电影"
         if not subs_url:
-            douban_id = candidate.get('id')
-            if not douban_id: return []
-            search_url = f"{self.BASE_URL}/search?q={urllib.parse.quote(str(douban_id))}&chost=zimuku.org"
+            search_id = candidate.get('id')
+            if not search_id: return []
+            search_url = f"{self.BASE_URL}/search?q={urllib.parse.quote(str(search_id))}&chost=zimuku.org"
             data = self.get_page(search_url)
             if not data: return []
             soup = BeautifulSoup(data, 'html.parser')

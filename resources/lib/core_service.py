@@ -57,7 +57,17 @@ def Search(items):
     logger.log(sys._getframe().f_code.co_name, "Search for [%s], item: %s" %
                (search_str, items), level=xbmc.LOGINFO)
 
-    candidate = get_candidate(search_str, items, logger)
+    imdb_id = (items.get('imdbnumber') or '').strip()
+    if imdb_id and not items.get('mansearch') and not items.get('tvshow'):
+        candidate = {
+            'id': imdb_id,
+            'source': 'imdb',
+            'type': 'movie',
+        }
+        logger.log(sys._getframe().f_code.co_name,
+                   "Using IMDB ID: %s, skip Douban search" % imdb_id, level=xbmc.LOGINFO)
+    else:
+        candidate = get_candidate(search_str, items, logger)
     if not candidate:
         return []
     subtitle_list = []
@@ -112,7 +122,8 @@ def handle_params(params):
             'tvshow': xbmc.getInfoLabel("VideoPlayer.TVshowtitle"),
             'title': xbmc.getInfoLabel("VideoPlayer.Title"),
             'filename': xbmc.getInfoLabel("Player.Filename"),
-            'path': xbmc.getInfoLabel("Player.Folderpath")
+            'path': xbmc.getInfoLabel("Player.Folderpath"),
+            'imdbnumber': xbmc.getInfoLabel("VideoPlayer.UniqueID(imdb)"),
         }
 
         if 'searchstring' in params:
