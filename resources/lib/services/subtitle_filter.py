@@ -1,3 +1,24 @@
+_SRC_RANK = {'official': 0, 'reprint': 1, 'original': 2, 'ai': 3, 'machine': 4}
+
+
+def _sort_key(sub):
+    tags = sub.get('tags', {})
+    langs = set(tags.get('lang', []))
+    bilingual = tags.get('bilingual', False)
+    if 'chs' in langs and bilingual:
+        lang_tier = 0
+    elif 'chs' in langs:
+        lang_tier = 1
+    elif 'cht' in langs and bilingual:
+        lang_tier = 2
+    elif 'cht' in langs:
+        lang_tier = 3
+    else:
+        lang_tier = 4
+    src_tier = min((_SRC_RANK.get(s, 5) for s in tags.get('source', [])), default=5)
+    return (lang_tier, src_tier)
+
+
 def apply_filters(subtitle_list, settings, logger):
     if not subtitle_list:
         return []
@@ -62,4 +83,5 @@ def apply_filters(subtitle_list, settings, logger):
         filtered_list.append(s)
 
     logger.log("SubtitleFilter", "Filtered to %d results" % len(filtered_list), level=1)
+    filtered_list.sort(key=_sort_key)
     return filtered_list
