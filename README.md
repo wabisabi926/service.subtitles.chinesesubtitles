@@ -1,6 +1,6 @@
 # ChineseSubtitles
 
-Kodi 21+ 中文字幕插件，支持从 SubHD 和 Zimuku 搜索下载字幕，自动绕过两个站点的验证码。
+Kodi 21+ 中文字幕插件，支持从 SubHD 和 Zimuku 搜索下载字幕，自动绕过 Zimuku 的云锁验证码。
 
 ## 安装
 
@@ -20,11 +20,23 @@ Kodi 21+ 中文字幕插件，支持从 SubHD 和 Zimuku 搜索下载字幕，�
 
 ## 使用
 
-1. 播放影片，打开字幕下载界面，选择 ChineseSubtitles。
+1. 播放影片，打开字幕下载界面，选择 ChineseSub。
 2. 确认影视条目，选择字幕下载。
-3. 若字幕包含多个文件，再选择具体使用哪个。
+3. 字幕自动按视频命名并保存到视频旁（或播放器设置的字幕目录），多集字幕包按集分发；无法匹配当前影片时才需手动选择文件。
 
 建议先完成刮削，确保片名、年份、季/集信息正确。
+
+## 开发与排查
+
+代码分两层：`resources/lib/core` 是纯 Python 字幕库（Zimuku 作品定位、豆瓣 ID 关联 SubHD 双站字幕、下载解压、过滤排序、自动保存，不依赖 Kodi，可独立使用与测试）；`resources/lib/kodi` 是 Kodi 适配层（对话框、列表、设置、rar/7z 解压等 xbmc 交互）。
+
+本插件依赖 SubHD、Zimuku 两个外部站点，站点改版或防爬策略变化都会影响可用性。
+反馈「字幕源有问题」时，可先运行健康检查定位是哪个环节：
+
+    python3 tests/test_external_health.py          # 轻量：搜索链路 + SubHD 下载 API
+    python3 tests/test_external_health.py --full   # 完整：真实下载并解压字幕
+
+也可运行完整测试套件（联网）：`pytest tests/`。SubHD 下载接口频繁调用会被限流（「下载频率过高」），稍等几分钟即可恢复。
 
 ## 许可
 
@@ -32,7 +44,7 @@ GPL-3.0-only
 
 ## 致谢
 
-- [svg-captcha-recognize](https://github.com/haua/svg-captcha-recognize) — SubHD 验证码处理的启发。
+- [svg-captcha-recognize](https://github.com/haua/svg-captcha-recognize) — 历史上的 SubHD 验证码处理启发（该形式已随站点改版移除）。
 - [zimuku_for_kodi](https://github.com/pizzamx/zimuku_for_kodi) — Zimuku 站点流程参考。
 - Zimuku 和 SubHD 提供的字幕资源，以及字幕作者的无偿奉献。
 
