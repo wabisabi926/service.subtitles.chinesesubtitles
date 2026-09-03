@@ -453,22 +453,88 @@ def test_rename_map_movie_twins():
     }
 
 
-def test_playback_pick_prefers_enabled_language():
-    from core.autosave import playback_pick, rename_map
+def test_playback_candidates_prefers_enabled_language():
+    from core.autosave import playback_candidates, rename_map
     subs = ["Show.S01E02.chs.ass", "Show.S01E02.cht.ass"]
     mapping = rename_map(subs, "Show.S01E02.720p", [])
-    assert playback_pick(mapping, "Show.S01E02.720p") == "Show.S01E02.chs.ass"
-    assert playback_pick(mapping, "Show.S01E02.720p", preferred=("cht",)) == "Show.S01E02.cht.ass"
+    assert playback_candidates(mapping, "Show.S01E02.720p")[0] == "Show.S01E02.chs.ass"
+    assert playback_candidates(mapping, "Show.S01E02.720p",
+                               preferred=("cht",))[0] == "Show.S01E02.cht.ass"
 
 
-def test_playback_pick_current_episode_and_no_match():
-    from core.autosave import playback_pick, rename_map
+def test_playback_candidates_current_episode_and_no_match():
+    from core.autosave import playback_candidates, rename_map
     subs = ["Show.S01E01.ass", "Show.S01E02.ass", "Show.S01E03.ass"]
     mapping = rename_map(subs, "Show.S01E02.720p", ["Show.S01E01.mkv", "Show.S01E03.mkv"])
-    assert playback_pick(mapping, "Show.S01E02.720p") == "Show.S01E02.ass"
+    assert playback_candidates(mapping, "Show.S01E02.720p") == ["Show.S01E02.ass"]
     # nothing maps to the playing video -> caller falls back to the picker
-    assert playback_pick({}, "Show.S01E02.720p") == ""
-    assert playback_pick(mapping, "Different.Video") == ""
+    assert playback_candidates({}, "Show.S01E02.720p") == []
+    assert playback_candidates(mapping, "Different.Video") == []
+
+
+def test_playback_candidates_prefer_bilingual_twin():
+    from core.autosave import playback_candidates, rename_map
+    # mono file first in the archive: bilingual must still win
+    subs = ["Show.S04E01.chs.srt", "Show.S04E01.eng.srt", "Show.S04E01.chs&eng.srt"]
+    mapping = rename_map(subs, "Show.S04E01.1080p", [])
+    assert playback_candidates(mapping, "Show.S04E01.1080p")[0] == "Show.S04E01.chs&eng.srt"
+    # Chinese-styled tags too
+    subs = ["Movie.简体.srt", "Movie.简英双语.srt", "Movie.英文.srt"]
+    mapping = rename_map(subs, "Movie.2010", [])
+    assert playback_candidates(mapping, "Movie.2010")[0] == "Movie.简英双语.srt"
+    # no language-code hint at all: a bilingual mark still beats position
+    subs = ["Movie.英文.srt", "Movie.中英.srt"]
+    mapping = rename_map(subs, "Movie.2010", [])
+    assert playback_candidates(mapping, "Movie.2010", preferred=("chs",))[0] == "Movie.中英.srt"
+
+
+def test_playback_candidates_best_first():
+    from core.autosave import playback_candidates, rename_map
+    subs = ["Movie.eng.srt", "Movie.chs.srt", "Movie.chs&eng.srt", "Movie.cht.srt"]
+    mapping = rename_map(subs, "Movie.2010", [])
+    assert playback_candidates(mapping, "Movie.2010") == [
+        "Movie.chs&eng.srt", "Movie.chs.srt", "Movie.cht.srt", "Movie.eng.srt"]
+    assert playback_candidates(mapping, "Other.Video") == []
+
+
+def test_fanout_names_follows_picked_variant():
+    from core.autosave import fanout_names, rename_map
+    subs = ["t.S01E01.chs.srt", "t.S01E01.chs&eng.srt",
+            "t.S01E02.chs.srt", "t.S01E02.chs&eng.srt",
+            "t.S01E03.chs.srt"]  # E03 lacks the bilingual twin
+    siblings = ["Show.S01E01", "Show.S01E03"]
+    mapping = rename_map(subs, "Show.S01E02", siblings)
+    picked = "t.S01E02.chs&eng.srt"
+    out = fanout_names(mapping, picked, video_stem="Show.S01E02")
+    # one file per remaining episode: the picked variant, else the best one
+    assert sorted(out) == ["t.S01E01.chs&eng.srt", "t.S01E03.chs.srt"]
+
+
+def test_fanout_names_movie_twins_stay_home():
+    from core.autosave import fanout_names, rename_map
+    subs = ["Movie.chs.srt", "Movie.chs&eng.srt"]
+    mapping = rename_map(subs, "Movie.2010", [])
+    # everything maps to the playing video: the player stores the pick,
+    # nothing is copied out
+    assert fanout_names(mapping, "Movie.chs&eng.srt", video_stem="Movie.2010") == []
+
+
+def test_fanout_names_without_pick():
+    from core.autosave import fanout_names, rename_map
+    subs = ["t.S01E01.srt", "t.S01E03.srt"]
+    mapping = rename_map(subs, "Show.S01E02", ["Show.S01E01", "Show.S01E03"])
+    # pack misses the playing episode: other episodes still fan out
+    assert sorted(fanout_names(mapping, "", video_stem="Show.S01E02")) == subs
+
+
+def test_is_bilingual_markers():
+    from core.autosave import is_bilingual
+    for name in ("X.chs&eng.ass", "X.cht+eng.ass", "X.chs.eng.srt", "X.eng&chs.srt",
+                 "X.简英.srt", "X.繁英.ass", "X.中英双语.srt", "X.简体&英文.srt",
+                 "X.简体中文&英文.srt", "X.中文&英文.srt"):
+        assert is_bilingual(name), name
+    for name in ("X.chs.ass", "X.eng.srt", "X.England.chs.srt", "X.简体.srt"):
+        assert not is_bilingual(name), name
 
 
 def test_lang_tag_composites():
