@@ -17,7 +17,7 @@ if _LIB_DIR not in sys.path:
     sys.path.insert(0, _LIB_DIR)
 
 from core import service
-from core.archive import SUBTITLE_EXTS, shorten_names
+from core.archive import shorten_names
 from core.autosave import fanout_names, playback_candidates, rename_map
 from core.filter import apply_filters
 from core.matcher import (FOLDER_SEASON_RE, VIDEO_EXTS, episode_marker, parse_filename,
@@ -46,22 +46,21 @@ def choose(title, options):
 
 
 def extract_archive(path):
-    """rar/7z (+ other Kodi-supported archives) via vfs add-ons; zip stays in core."""
-    ext = path.split(".")[-1].lower()
-    protocol = "rar" if ext == "rar" else "archive"
-    url = f"{protocol}://{urllib.parse.quote_plus(path)}"
-    try:
+    """(name, url) of every entry of a rar/7z/... archive, folders walked,
+    read through Kodi's vfs add-ons; zip stays in core."""
+    protocol = "rar" if path.lower().endswith(".rar") else "archive"
+
+    def walk(url):
         dirs, files = xbmcvfs.listdir(url)
+        yield from ((f, f"{url}/{f}") for f in files)
+        for d in dirs:
+            yield from walk(f"{url}/{d}")
+
+    try:
+        return list(walk(f"{protocol}://{urllib.parse.quote_plus(path)}"))
     except Exception as e:
-        log(f"vfs extract failed for {path}: {e}", xbmc.LOGWARNING)
-        return "", []
-    if "__MACOSX" in dirs:
-        dirs.remove("__MACOSX")
-    target = url
-    if not any(f.lower().endswith(SUBTITLE_EXTS) for f in files) and dirs:
-        target = url + "/" + dirs[0]
-        files = xbmcvfs.listdir(target)[1]
-    return target, files
+        log(f"vfs listing failed for {path}: {e}", xbmc.LOGWARNING)
+        return []
 
 
 def clean_temp():

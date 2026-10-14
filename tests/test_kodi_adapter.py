@@ -195,6 +195,19 @@ def test_fanout_folder_follows_storage_mode(monkeypatch):
     assert plugin.fanout_folder("/videos/Show") == "/videos/Show"
 
 
+def test_extract_archive_walks_nested_folders(monkeypatch):
+    root = "rar://%2Ftmp%2Fp.rar"
+    tree = {root: (["Fonts", "Subs"], ["readme.txt"]),
+            root + "/Fonts": ([], ["a.ttf"]),
+            root + "/Subs": ([], ["ep01.srt"])}
+    monkeypatch.setattr(xbmcvfs, "listdir", tree.__getitem__)
+    assert plugin.extract_archive("/tmp/p.rar") == [
+        ("readme.txt", root + "/readme.txt"), ("a.ttf", root + "/Fonts/a.ttf"),
+        ("ep01.srt", root + "/Subs/ep01.srt")]
+    monkeypatch.setattr(xbmcvfs, "listdir", lambda url: 1 / 0)
+    assert plugin.extract_archive("/tmp/p.7z") == []
+
+
 def test_clean_temp_wipes_and_clears_kodi_cache(monkeypatch, tmp_path):
     temp = tmp_path / "temp"
     (temp / "old_extracted").mkdir(parents=True)
