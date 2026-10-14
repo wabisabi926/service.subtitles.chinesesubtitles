@@ -176,17 +176,15 @@ class ZimukuProvider:
                     continue
                 season, year = parse_meta(title)
                 works.append(Work(title=title, season=season, year=year,
-                                  anchors={"zimuku": [subs_url]}))
+                                  anchors={"zimuku": subs_url}))
         return works
 
     # ---- search ----
 
     def search(self, query, work):
-        """List subtitles for every /subs/{id}.html page the work anchors."""
-        results = []
-        for subs_url in (work.anchors.get("zimuku") or []) if work else []:
-            results += self.work_page(query, subs_url)[1]
-        return results
+        """List the subtitles of the work's /subs/{id}.html page."""
+        url = work.anchors.get("zimuku")
+        return self.work_page(query, url)[1] if url else []
 
     def work_page(self, query, subs_url):
         """One GET of a work page -> (douban id, episode-filtered subtitles).

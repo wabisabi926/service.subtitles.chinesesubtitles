@@ -23,7 +23,7 @@ def test_subhd_search_and_download():
     print("\n=== SubHD direct /d/{douban id}: Friends S1 ===")
     query = WorkQuery(title="老友记 Friends", season="1", is_tv=True)
     work = Work(title="老友记 第一季 Friends", season="1",
-                anchors={"subhd": [f"/d/{FRIENDS_S1_DOUBAN}"]})
+                anchors={"subhd": f"/d/{FRIENDS_S1_DOUBAN}"})
     results = provider.search(query, work)
     assert results, "SubHD direct douban-id page returned no subtitles."
     print(f"Total subtitles found: {len(results)}")

@@ -50,7 +50,7 @@ def test_zimuku_find_works():
         f"Missing seasons, got {sorted(seasons)} among {len(works)} works"
     print(f"Total works: {len(works)}, seasons found: {sorted(seasons)}")
     for i, w in enumerate(works[:5], start=1):
-        print(f"{i}. {w.title} | season={w.season!r} year={w.year!r} | {w.anchors['zimuku'][0]}")
+        print(f"{i}. {w.title} | season={w.season!r} year={w.year!r} | {w.anchors['zimuku']}")
 
 
 def test_zimuku_work_page():
@@ -60,7 +60,7 @@ def test_zimuku_work_page():
     works = provider.find_works(WorkQuery(title="老友记 Friends"))
     s1 = next(w for w in works if w.season == "1")
     query = WorkQuery(title="老友记 Friends", season="1", is_tv=True)
-    douban, subs = provider.work_page(query, s1.anchors["zimuku"][0])
+    douban, subs = provider.work_page(query, s1.anchors["zimuku"])
     print(f"work: {s1.title} | douban id: {douban} | subtitles: {len(subs)}")
     assert douban == "1393859", f"unexpected douban id: {douban}"
     assert subs, "work page yielded no subtitles"

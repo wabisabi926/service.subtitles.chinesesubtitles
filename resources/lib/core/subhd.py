@@ -36,17 +36,16 @@ class SubhdProvider:
     # ---- search ----
 
     def search(self, query, work):
-        """List subtitles for every /d/{douban id} page the work anchors."""
-        results = []
-        episode = query.episode if query.is_tv else None
-        for href in (work.anchors.get("subhd") or []) if work else []:
-            content = self._get(urllib.parse.urljoin(self.BASE_URL, href))
-            if not content:
-                continue
-            results += self._parse_list(content, episode)
-        production = "剧集" if query.is_tv else "电影"
+        """List the subtitles of the work's /d/{douban id} page."""
+        href = work.anchors.get("subhd")
+        if not href:
+            return []
+        content = self._get(urllib.parse.urljoin(self.BASE_URL, href))
+        if not content:
+            return []
+        results = self._parse_list(content, query.episode if query.is_tv else None)
         for r in results:
-            r.tags.production = production
+            r.tags.production = "剧集" if query.is_tv else "电影"
         return results
 
     def _parse_list(self, content, target_episode=None):

@@ -21,7 +21,7 @@ class Work:
     season: str = ""         # parsed from the title; "" when it carries none
     year: str = ""           # parsed from the title's "(19|20)xx" bracket
     anchors: dict = field(default_factory=dict)
-    # site name -> that site's page URLs. Zimuku pages come from the work
+    # site name -> that site's page URL. Zimuku's comes from the work
     # search; the subhd entry is attached after the user picks a row, built
     # from the picked page's Douban id ("/d/1393859")
     preloaded: dict = field(default_factory=dict)

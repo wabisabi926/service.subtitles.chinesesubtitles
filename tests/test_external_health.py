@@ -61,7 +61,7 @@ def check_subhd_direct_page():
     """SubHD serves work pages under Douban subject ids (/d/{id})."""
     provider = SubhdProvider()
     work = Work(title="盗梦空间 Inception",
-                anchors={"subhd": ["/d/%s" % DOUBAN_INCEPTION]})
+                anchors={"subhd": "/d/%s" % DOUBAN_INCEPTION})
     results = provider.search(WorkQuery(title=WORK_QUERY), work)
     assert results, "/d/{douban id} page yielded no subtitles (site redesign?)"
     return "%d subtitles (/d/%s)" % (len(results), DOUBAN_INCEPTION)

@@ -59,11 +59,11 @@ def test_parse_meta_year_bracket():
 
 
 def subhd_work(title, season="", year="", href="/d/1"):
-    return Work(title=title, season=season, year=year, anchors={"subhd": [href]})
+    return Work(title=title, season=season, year=year, anchors={"subhd": href})
 
 
 def zimuku_work(title, season="", year="", url="https://zimuku.org/subs/1.html"):
-    return Work(title=title, season=season, year=year, anchors={"zimuku": [url]})
+    return Work(title=title, season=season, year=year, anchors={"zimuku": url})
 
 
 def test_order_works_season_first_then_year():
@@ -122,8 +122,7 @@ def patch_providers(monkeypatch, providers):
 def test_resolve_work_bridges_subhd_by_douban_id(monkeypatch):
     patch_providers(monkeypatch, {"zimuku": FakeProvider, "subhd": RaisingProvider})
     picked = service.resolve_work(WorkQuery(title="绝命毒师"), log=lambda msg: None)
-    assert picked.anchors == {"zimuku": ["https://zimuku.org/subs/1.html"],
-                              "subhd": ["/d/1393859"]}
+    assert picked.anchors == {"zimuku": "https://zimuku.org/subs/1.html", "subhd": "/d/1393859"}
 
 
 def test_resolve_work_survives_a_broken_bridge(monkeypatch):
@@ -244,12 +243,12 @@ def test_search_all_anchors_and_isolation(monkeypatch):
 
     # only sites whose anchor the work carries are searched
     patch_providers(monkeypatch, {"subhd": FakeProvider, "zimuku": RaisingProvider})
-    work = Work(title="绝命毒师 第二季", anchors={"subhd": ["/d/1"]})
+    work = Work(title="绝命毒师 第二季", anchors={"subhd": "/d/1"})
     subs = service.search_all(query, work, log=lambda msg: None)
     assert len(subs) == 1 and subs[0].tags.provider == "subhd"
 
     # a raising site degrades to nothing, the healthy one survives
-    work = Work(title="绝命毒师 第二季", anchors={"subhd": ["/d/1"], "zimuku": ["u"]})
+    work = Work(title="绝命毒师 第二季", anchors={"subhd": "/d/1", "zimuku": "u"})
     subs = service.search_all(query, work, log=lambda msg: None)
     assert len(subs) == 1 and subs[0].tags.provider == "subhd"
 

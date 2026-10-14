@@ -88,7 +88,7 @@ def _bridge(zimuku, query, work, log):
     fetch SubHD. A page without an id (or an unreachable one) leaves the
     work Zimuku-only; search_all then degrades to the single site.
     """
-    url = (work.anchors.get("zimuku") or [""])[0]
+    url = work.anchors.get("zimuku")
     if not url:
         return
     try:
@@ -97,7 +97,7 @@ def _bridge(zimuku, query, work, log):
         log(f"zimuku: work page fetch failed: {e}")
         return
     if douban:
-        work.anchors["subhd"] = [f"/d/{douban}"]
+        work.anchors["subhd"] = f"/d/{douban}"
     work.preloaded["zimuku"] = subs
 
 
