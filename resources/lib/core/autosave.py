@@ -68,7 +68,7 @@ def rename_map(sub_names, video_stem, sibling_stems, season=None):
             used.add(mapping[name])
         return mapping
     candidates = {}  # episode -> [(season, stem)] with the playing video first
-    for stem in [video_stem] + [s for s in sibling_stems if s != video_stem]:
+    for stem in dict.fromkeys([video_stem, *sibling_stems]):
         s, e = episode_marker(stem)
         if e is not None:
             candidates.setdefault(e, []).append((s, stem))
