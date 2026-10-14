@@ -399,6 +399,26 @@ def test_episode_marker_variants():
     assert episode_marker("第12集") == (None, 12)
     assert episode_marker("someone.EP3.x264") == (None, 3)
     assert episode_marker("Movie.2010.1080p") == (None, None)
+    assert episode_marker("[LoreLoli] Cat's Eye - 03 [BDRip 1440x1080 x264 Hi10P FLAC]") == (None, 3)
+    assert episode_marker("[sam] Chainsaw Man - 03v2 [BD 1080p FLAC] [0E05A166]") == (None, 3)
+    assert episode_marker("Neon Genesis Evangelion - 01 - 1080p Hi10p [462728C9]") == (None, 1)
+    assert episode_marker("[Group] Title - 12.chs.ass") == (None, 12)
+    for name in ("Movie.2010.DTS-HD.MA.5.1-Group", "Movie (2010) - 1080p",
+                 "Movie (2010) DTS - 5.1", "Movie - 2019 [1080p]"):
+        assert episode_marker(name) == (None, None), name
+
+
+def test_rename_map_fansub_pack_onto_dash_numbered_videos():
+    from core.autosave import fanout_names, playback_candidates, rename_map
+    subs = [f"[U2-Rip] キャッツ・アイ 第{n:02d}話「x」(BDrip 1440x1080 H264 FLAC).srt"
+            for n in (1, 2, 3)]
+    videos = [f"[LoreLoli] Cat's Eye - {n:02d} [BDRip 1440x1080 x264 Hi10P FLAC]"
+              for n in (1, 2, 3)] \
+        + ["[LoreLoli] Cat's Eye 2nd Season - 37 [BDRip 1440x1080 x264 Hi10P FLAC]"]
+    mapping = rename_map(subs, videos[2], videos)
+    assert mapping == dict(zip(subs, videos[:3]))
+    assert playback_candidates(mapping, videos[2]) == [subs[2]]
+    assert sorted(fanout_names(mapping, subs[2], video_stem=videos[2])) == subs[:2]
 
 
 def test_rename_map_single_subtitle():

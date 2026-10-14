@@ -49,6 +49,9 @@ FOLDER_SEASON_RE = re.compile(rf'(?:{_CN_SEASON}|{_WORD_SEASON}|S(\d{{1,2}}))\s*
 SE_EP_RE = re.compile(r'[sS](\d{1,2})[.\s]*[eE](\d{1,3})\b')
 EP_MARK_RE = re.compile(r'\b[eE][pP]?(\d{1,3})\b')  # lone episode: E05 / EP05
 CN_EP_MARK_RE = re.compile(r'第\s*(\d{1,3})\s*[集话話]')
+# fansub numbering "[Group] Title - 03 [BD]" / "- 03v2"; the spaced dash
+# excludes DTS-HD, the lookahead excludes "- 1080p" and "- 5.1"
+DASH_EP_RE = re.compile(r'(?:^|[\s_])-[\s_]*(\d{1,3})(?:v\d)?(?=[\s_\[(]|\.(?!\d)|$)')
 CN_SEASON_EP_RE = re.compile(rf'第([{_CN_DIGITS}\d]+)季.*?第\s*(\d+)\s*集')
 YEAR_TOKEN_RE = re.compile(rf'^{_CENTURY}$')
 
@@ -62,6 +65,9 @@ def episode_marker(name):
     if m:
         return None, int(m.group(1))
     m = CN_EP_MARK_RE.search(name)
+    if m:
+        return None, int(m.group(1))
+    m = DASH_EP_RE.search(name)
     if m:
         return None, int(m.group(1))
     return None, None
