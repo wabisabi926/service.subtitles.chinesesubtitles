@@ -38,19 +38,21 @@ def decode_gbk(raw_bytes):
 
 
 def fix_zip_filename(name):
-    """Recover GBK-encoded filename that was mis-decoded as cp437 by zipfile.
+    """Recover a zip entry name that zipfile decoded as cp437 for want of
+    the UTF-8 flag: UTF-8 first (macOS zips set no flag), then GBK.
 
-    Tries the stdlib gb18030 (a GBK superset) first; the bundled table is
-    the fallback for Kodi platforms (CoreELEC/LibreELEC) whose stripped
-    Python ships without CJK codecs — see PR #1 / commit ac869b2."""
-    if all(ord(c) <= 127 for c in name):
+    GBK goes through the stdlib gb18030 (a superset) when present; the
+    bundled table is the fallback for Kodi platforms (CoreELEC/LibreELEC)
+    whose stripped Python ships without CJK codecs — see commit ac869b2."""
+    if name.isascii():
         return name
     try:
         raw = name.encode('cp437')
-    except (UnicodeEncodeError, LookupError):
+    except UnicodeEncodeError:
         return name
-    try:
-        return raw.decode('gb18030')
-    except (UnicodeDecodeError, LookupError):
-        pass
+    for codec in ('utf-8', 'gb18030'):
+        try:
+            return raw.decode(codec)
+        except (UnicodeDecodeError, LookupError):
+            pass
     return decode_gbk(raw) or name

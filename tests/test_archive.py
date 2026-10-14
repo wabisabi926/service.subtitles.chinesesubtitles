@@ -38,9 +38,11 @@ def test_fix_zip_filename_utf8_passthrough():
 
 
 def test_fix_zip_filename_garbled():
-    # zipfile decodes GBK bytes as cp437 when the UTF-8 flag is missing
-    garbled = '中文字幕.srt'.encode('gbk').decode('cp437')
-    assert fix_zip_filename(garbled) == '中文字幕.srt'
+    # zipfile decodes the raw bytes as cp437 when the UTF-8 flag is missing,
+    # whether they were GBK (Chinese Windows tools) or UTF-8 (macOS Finder)
+    for encoding in ('gbk', 'utf-8'):
+        garbled = '星际穿越.字幕.srt'.encode(encoding).decode('cp437')
+        assert fix_zip_filename(garbled) == '星际穿越.字幕.srt', encoding
 
 
 def _create_zip_with_gbk_filename(zip_path, filename_gbk_bytes, content=b'fake subtitle'):
