@@ -76,8 +76,5 @@ def shorten_names(names):
     """Trim the longest common prefix (up to a dot) so picker entries stay readable."""
     if len(names) < 2:
         return list(names)
-    shortest = min(names, key=len)
-    diff = next((i for i in range(len(shortest))
-                 if any(n[i] != shortest[i] for n in names)), len(shortest))
-    dot = shortest[:diff].rfind(".") + 1
+    dot = os.path.commonprefix(names).rfind(".") + 1
     return [n[dot:] for n in names]
