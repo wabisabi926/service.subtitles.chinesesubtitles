@@ -161,7 +161,7 @@ def test_resolve_work_single_row_skips_picker(monkeypatch):
     calls = []
     patch_providers(monkeypatch, {"zimuku": FakeProvider, "subhd": FakeProvider})
     picked = service.resolve_work(WorkQuery(title="x"),
-                                  choose=lambda t, o: calls.append(o) or None,
+                                  choose=lambda o: calls.append(o) or None,
                                   log=lambda msg: None)
     assert picked is not None and not calls
 
@@ -193,7 +193,7 @@ def test_resolve_work_season_filters_rows(monkeypatch):
     patch_providers(monkeypatch, {"zimuku": Seasons, "subhd": FakeProvider})
     picked = service.resolve_work(
         WorkQuery(title="老友记 Friends", season="10", is_tv=True),
-        choose=lambda t, o: offered.append(o) or 0, log=lambda msg: None)
+        choose=lambda o: offered.append(o) or 0, log=lambda msg: None)
     # other seasons dropped, the season-less pack kept; exact season first
     assert len(offered[0]) == 2
     assert picked.season == "10"
@@ -210,11 +210,11 @@ def test_resolve_work_picker_paths(monkeypatch):
     # headless: first row wins
     assert service.resolve_work(query, log=lambda m: None).title == "A"
     # picker selects the second row
-    picked = service.resolve_work(query, choose=lambda t, o: 1, log=lambda m: None)
+    picked = service.resolve_work(query, choose=lambda o: 1, log=lambda m: None)
     assert picked.title == "B"
     # picker cancelled / out of range
-    assert service.resolve_work(query, choose=lambda t, o: None, log=lambda m: None) is None
-    assert service.resolve_work(query, choose=lambda t, o: 99, log=lambda m: None) is None
+    assert service.resolve_work(query, choose=lambda o: None, log=lambda m: None) is None
+    assert service.resolve_work(query, choose=lambda o: 99, log=lambda m: None) is None
 
 
 def test_resolve_work_nothing_found(monkeypatch):

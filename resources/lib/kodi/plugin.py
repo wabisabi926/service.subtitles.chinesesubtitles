@@ -40,7 +40,7 @@ def log(message, level=xbmc.LOGINFO):
 # ---- host adapters: what core expects from its runtime ----
 
 def choose(title, options):
-    """Dialog picker for core flows; returns None when the user cancels."""
+    """Dialog picker; None when the user cancels."""
     sel = xbmcgui.Dialog().select(title, options)
     return None if sel < 0 else sel
 
@@ -199,7 +199,8 @@ def current_query():
 
 def do_search(query):
     log(f"search query: {query}")
-    work = service.resolve_work(query, choose=choose, log=log)
+    work = service.resolve_work(query, log=log,
+                                choose=lambda options: choose(__language__(30903), options))
     if not work:
         return
 
@@ -285,7 +286,7 @@ def autosave(result):
         # fans out to the other episodes below
         display = (shorten_names(candidates)
                    if __addon__.getSetting("cutsubfn") == "true" else candidates)
-        sel = choose("Choose Subtitle", display)
+        sel = choose(__language__(30904), display)
         if sel is not None:
             picked = candidates[sel]
 
@@ -338,7 +339,7 @@ def do_download(link, provider):
         return [result.paths[0]]
     # nothing maps to the playing video: let the user pick
     display = result.display_names if __addon__.getSetting("cutsubfn") == "true" else result.files
-    sel = choose("Choose Subtitle", display)
+    sel = choose(__language__(30904), display)
     if sel is None:
         # cancel falls back to the first entry, mirroring autosave's
         # cancel-keeps-best: Kodi already committed to loading a subtitle

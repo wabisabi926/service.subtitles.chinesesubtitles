@@ -29,6 +29,14 @@ msgctxt "#30902"
 msgid "Invalid subtitle file, please choose another"
 msgstr "无效字幕，请选择其他字幕"
 
+msgctxt "#30903"
+msgid "Select Work"
+msgstr "选择作品"
+
+msgctxt "#30904"
+msgid "Choose Subtitle"
+msgstr "选择字幕"
+
 msgctxt "#30260"
 msgid "Only show bilingual subtitles"
 msgstr "仅显示双语字幕"

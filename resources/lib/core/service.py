@@ -65,7 +65,7 @@ def resolve_work(query, choose=None, log=noop_log):
     sites by id instead of fuzzy title matching — and the page's subtitle
     list, preloaded for search_all. Returns None when nothing is found or
     the picker is cancelled. A single row skips the picker;
-    `choose(title, options)` otherwise decides (headless default: first).
+    `choose(options)` otherwise decides (headless default: first).
     """
     zimuku = PROVIDERS["zimuku"](log=log)
     rows = _zimuku_rows(zimuku, query, log)
@@ -74,7 +74,7 @@ def resolve_work(query, choose=None, log=noop_log):
     if len(rows) == 1:
         work = rows[0]
     else:
-        index = choose("Select Work", [w.title for w in rows]) if choose else 0
+        index = choose([w.title for w in rows]) if choose else 0
         if index is None or not 0 <= index < len(rows):
             return None
         work = rows[index]
