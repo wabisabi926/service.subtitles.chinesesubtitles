@@ -74,27 +74,14 @@ FORMAT_LABELS = {fmt: fmt.upper() for fmt in FORMATS}
 
 def build_label(tags, filename=""):
     """Display label such as [电影][简英][官方][ASS][合集][YYeTs] name.srt."""
-    label = ""
-    if tags.production:
-        label += f"[{tags.production}]"
-    marks = "".join(LANG_MARKS[x] for x in LANGS if x in tags.lang)
-    if marks:
-        label += f"[{marks}]"
-    for key, text in SOURCE_LABELS.items():
-        if key in tags.source:
-            label += f"[{text}]"
-            break
-    for key, text in FORMAT_LABELS.items():
-        if key in tags.fmt:
-            label += f"[{text}]"
-            break
-    if tags.collection:
-        label += "[合集]"
-    if tags.fansub:
-        label += f"[{tags.fansub}]"
-    if filename:
-        label += f" {filename}"
-    return label
+    parts = (tags.production,
+             "".join(LANG_MARKS[x] for x in LANGS if x in tags.lang),
+             next((text for key, text in SOURCE_LABELS.items() if key in tags.source), ""),
+             next((text for key, text in FORMAT_LABELS.items() if key in tags.fmt), ""),
+             "合集" if tags.collection else "",
+             tags.fansub)
+    label = "".join(f"[{p}]" for p in parts if p)
+    return f"{label} {filename}" if filename else label
 
 
 def language_meta(tags):
