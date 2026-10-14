@@ -306,6 +306,13 @@ def test_parse_filename_lowercase_marker():
     assert out["title"] == "show name" and out["season"] == "1" and out["episode"] == "2"
 
 
+def test_parse_filename_lone_episode_markers():
+    out = parse_filename("[LoreLoli] Cat's Eye - 03 [BDRip 1440x1080 x264 Hi10P FLAC].mkv")
+    assert out == {"title": "[LoreLoli] Cat's Eye", "year": "", "season": "", "episode": "3"}
+    assert parse_filename("someone.EP3.x264")["episode"] == "3"
+    assert parse_filename("Show.S00E05.Special")["season"] == ""  # specials carry no season
+
+
 def test_parse_filename_strips_release_tags_best_effort():
     out = parse_filename("Some.Show.2160p.HDTV.x265")
     assert out["title"] == "Some Show"
@@ -401,6 +408,8 @@ def test_episode_marker_variants():
     assert episode_marker("Show.S02.E05.720p") == (2, 5)  # dot-separated form
     assert episode_marker("第12集") == (None, 12)
     assert episode_marker("someone.EP3.x264") == (None, 3)
+    assert episode_marker("Show.S00E05.Special") == (0, 5)
+    assert episode_marker("某剧.第二季.第05集") == (2, 5)
     assert episode_marker("Movie.2010.1080p") == (None, None)
     assert episode_marker("[LoreLoli] Cat's Eye - 03 [BDRip 1440x1080 x264 Hi10P FLAC]") == (None, 3)
     assert episode_marker("[sam] Chainsaw Man - 03v2 [BD 1080p FLAC] [0E05A166]") == (None, 3)
@@ -467,6 +476,10 @@ def test_rename_map_season_disambiguation():
     mapping = rename_map(subs, "Show.S02E05.mkv", siblings, season=2)
     assert mapping["t.S01E05.ass"] == "Show.S01E05.mkv"
     assert mapping["t.S02E05.ass"] == "Show.S02E05.mkv"
+    # specials (season 0) stay distinct from the playing season
+    mapping = rename_map(["t.S00E05.ass", "t.S01E05.ass"], "Show.S01E05",
+                         ["Show.S00E05", "Show.S01E05"], season=1)
+    assert mapping == {"t.S00E05.ass": "Show.S00E05", "t.S01E05.ass": "Show.S01E05"}
 
 
 def test_rename_map_movie_twins():

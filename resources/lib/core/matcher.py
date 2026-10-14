@@ -46,31 +46,33 @@ VIDEO_EXTS = (".mkv", ".mp4", ".avi", ".wmv", ".mpg", ".mpeg", ".ts", ".m2ts",
 
 # trailing season marker in folder names: "电锯人 第一季", "Show Season 2", "Show S02"
 FOLDER_SEASON_RE = re.compile(rf'(?:{_CN_SEASON}|{_WORD_SEASON}|S(\d{{1,2}}))\s*$', re.I)
-SE_EP_RE = re.compile(r'[sS](\d{1,2})[.\s]*[eE](\d{1,3})\b')
-EP_MARK_RE = re.compile(r'\b[eE][pP]?(\d{1,3})\b')  # lone episode: E05 / EP05
-CN_EP_MARK_RE = re.compile(r'第\s*(\d{1,3})\s*[集话話]')
-# fansub numbering "[Group] Title - 03 [BD]" / "- 03v2"; the spaced dash
-# excludes DTS-HD, the lookahead excludes "- 1080p" and "- 5.1"
-DASH_EP_RE = re.compile(r'(?:^|[\s_])-[\s_]*(\d{1,3})(?:v\d)?(?=[\s_\[(]|\.(?!\d)|$)')
-CN_SEASON_EP_RE = re.compile(rf'第([{_CN_DIGITS}\d]+)季.*?第\s*(\d+)\s*集')
+# episode markers, most specific first; (?P<s>) is the season when the form carries one
+EPISODE_RES = (
+    re.compile(r'[sS](?P<s>\d{1,2})[.\s]*[eE](?P<e>\d{1,3})\b'),
+    re.compile(rf'第(?P<s>[{_CN_DIGITS}\d]+)季.*?第\s*(?P<e>\d+)\s*集'),
+    re.compile(r'\b[eE][pP]?(?P<e>\d{1,3})\b'),
+    re.compile(r'第\s*(?P<e>\d{1,3})\s*[集话話]'),
+    # fansub "[Group] Title - 03 [BD]" / "- 03v2": the spaced dash excludes
+    # DTS-HD, the lookahead excludes "- 1080p" and "- 5.1"
+    re.compile(r'(?:^|[\s_])-[\s_]*(?P<e>\d{1,3})(?:v\d)?(?=[\s_\[(]|\.(?!\d)|$)'),
+)
 YEAR_TOKEN_RE = re.compile(rf'^{_CENTURY}$')
+
+
+def _episode(name):
+    """(season, episode, start) of the first marker in a name: season is
+    None for a bare episode form, everything None without a marker."""
+    for regex in EPISODE_RES:
+        m = regex.search(name)
+        if m:
+            season = m.groupdict().get("s")
+            return (season_number(season) if season else None), int(m.group("e")), m.start()
+    return None, None, None
 
 
 def episode_marker(name):
     """(season, episode) ints carried by a filename; either may be None."""
-    m = SE_EP_RE.search(name)
-    if m:
-        return int(m.group(1)), int(m.group(2))
-    m = EP_MARK_RE.search(name)
-    if m:
-        return None, int(m.group(1))
-    m = CN_EP_MARK_RE.search(name)
-    if m:
-        return None, int(m.group(1))
-    m = DASH_EP_RE.search(name)
-    if m:
-        return None, int(m.group(1))
-    return None, None
+    return _episode(name)[:2]
 
 # release tags stripped from parsed titles, grouped by what they describe;
 # the sub runs on tokens already split on . _ - space, so only dot-free
@@ -99,7 +101,7 @@ RELEASE_JUNK_RE = re.compile(_any_of(sum(JUNK_TAGS.values(), ())), re.I)
 def parse_filename(name):
     """Extract {title, year, season, episode} from a release filename.
 
-    Rules applied in order: SxxExx markers, Chinese season/episode markers,
+    Rules applied in order: the first episode marker (title stops there),
     a standalone (19|20)xx token as year (title stops there), then separator
     '.'/'_'/'-'/' ' -> space and best-effort release-tag stripping (residue
     like a lone 'DL' can survive in files without year or episode markers).
@@ -112,16 +114,10 @@ def parse_filename(name):
     if not name:
         return out
 
-    m = SE_EP_RE.search(name)
-    if m:
-        out["season"], out["episode"] = m.group(1).lstrip("0") or "0", m.group(2).lstrip("0") or "0"
-        name = name[:m.start()]
-    else:
-        m = CN_SEASON_EP_RE.search(name)
-        if m:
-            out["season"] = str(season_number(m.group(1)) or "")
-            out["episode"] = m.group(2).lstrip("0") or "0"
-            name = name[:m.start()]
+    season, episode, start = _episode(name)
+    if episode is not None:
+        out["season"], out["episode"] = str(season or ""), str(episode)
+        name = name[:start]
 
     tokens = re.split(r"[.\-_ ]+", name)
     for i, token in enumerate(tokens):
