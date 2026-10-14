@@ -414,6 +414,7 @@ def test_episode_marker_variants():
     assert episode_marker("[sam] Chainsaw Man - 03v2 [BD 1080p FLAC] [0E05A166]") == (None, 3)
     assert episode_marker("[sam] Chainsaw Man - 03V2 [BD]") == (None, 3)
     assert episode_marker("show.s02e05") == episode_marker("Show.Ep05.S02E05") == (2, 5)
+    assert episode_marker("Show.S02EP05") == (2, 5)
     assert episode_marker("Neon Genesis Evangelion - 01 - 1080p Hi10p [462728C9]") == (None, 1)
     assert episode_marker("[Group] Title - 12.chs.ass") == (None, 12)
     for name in ("Movie.2010.DTS-HD.MA.5.1-Group", "Movie (2010) - 1080p",

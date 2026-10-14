@@ -48,7 +48,7 @@ VIDEO_EXTS = (".mkv", ".mp4", ".avi", ".wmv", ".mpg", ".mpeg", ".ts", ".m2ts",
 FOLDER_SEASON_RE = re.compile(rf'(?:{_CN_SEASON}|{_WORD_SEASON}|S(\d{{1,2}}))\s*$', re.I)
 # episode markers, most specific first; (?P<s>) is the season when the form carries one
 EPISODE_RES = tuple(re.compile(p, re.I) for p in (
-    r's(?P<s>\d{1,2})[.\s]*e(?P<e>\d{1,3})\b',
+    r's(?P<s>\d{1,2})[.\s]*ep?(?P<e>\d{1,3})\b',
     rf'第(?P<s>[{_CN_DIGITS}\d]+)季.*?第\s*(?P<e>\d+)\s*集',
     r'\bep?(?P<e>\d{1,3})\b',
     r'第\s*(?P<e>\d{1,3})\s*[集话話]',

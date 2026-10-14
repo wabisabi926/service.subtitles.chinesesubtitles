@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 
 from .archive import ARCHIVE_EXTS, SUBTITLE_EXTS, save_and_extract
 from .http import filename_from_headers, make_session, noop_log
-from .matcher import parse_meta
+from .matcher import episode_marker, parse_meta
 from .models import DownloadResult, Subtitle, Tags, Work
 
 MAX_CAPTCHA_RETRIES = 3
@@ -216,18 +216,15 @@ class ZimukuProvider:
 
     @staticmethod
     def _episode_filter(season, episode):
-        """Return fn(name) -> (include, collection) matching the wanted episode."""
-        if not (season and episode and str(season).isdigit() and str(episode).isdigit()):
+        """Return fn(name) -> (include, collection) matching the wanted episode;
+        a row without any episode marker is a season pack and always passes."""
+        if not (str(season).isdigit() and str(episode).isdigit()):
             return lambda name: (True, False)
-        s, ep = int(season), int(episode)
-        tag_re = re.compile(r'(S\d{1,2}\s*(E|EP)\d{1,3})|(\bEP?\d{1,3}\b)|(第\s*\d+\s*集)')
-        # uploaders pad and space markers freely: S01E03, S1E3, E003, 第03集, 第 3 集
-        ep_re = re.compile(rf'(?<!\d)(?:S0*{s}\s*EP?0*{ep}|EP?0*{ep}|第\s*0*{ep}\s*集)(?!\d)', re.I)
+        want = int(season), int(episode)
 
         def matches(name):
-            upper = name.upper()
-            has_tag = tag_re.search(upper) is not None
-            return (not has_tag or bool(ep_re.search(upper)), not has_tag)
+            s, e = episode_marker(name)
+            return (e is None or (e == want[1] and s in (None, want[0])), e is None)
         return matches
 
     # ---- download ----

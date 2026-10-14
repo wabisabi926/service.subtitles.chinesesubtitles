@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 
 from .archive import save_and_extract
 from .http import filename_from_headers, make_session, noop_log
+from .matcher import episode_marker
 from .models import FORMATS, DownloadResult, Subtitle, Tags
 
 # Chinese origin badge -> normalized source tag
@@ -54,21 +55,17 @@ class SubhdProvider:
         container = soup.select_one("div.bg-white.shadow-sm.rounded-3.mb-5")
         if not container:
             return []
-        results, category = [], "general"
+        results, category = [], None
         for child in container.children:
             if child.name != "div":
                 continue
             classes = child.get("class", [])
             if "bg-light" in classes:
                 text = child.get_text()
-                m = re.search(r"第\s*(\d+)\s*集", text)
-                if "合集" in text:
-                    category = "collection"
-                else:
-                    category = str(int(m.group(1))) if m else "general"
+                category = "collection" if "合集" in text else episode_marker(text)[1]
             elif "row" in classes:
                 is_collection = category == "collection"
-                if target_episode and not is_collection and category != str(target_episode):
+                if target_episode and not is_collection and category != int(target_episode):
                     continue
                 link = child.select_one("a.link-dark")
                 if not link or not link.get("href", "").startswith("/a/"):
