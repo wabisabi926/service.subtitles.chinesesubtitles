@@ -93,7 +93,8 @@ def test_unzip_lists_but_skips_non_subtitles():
 def test_save_and_extract_uses_the_backend_listing():
     with tempfile.TemporaryDirectory() as tmpdir:
         listing = [('readme.txt', 'rar://p/readme.txt'), ('ep01.srt', 'rar://p/ep01.srt'),
-                   ('ep01.srt', 'rar://p/Subs/ep01.srt'), ('._ep01.srt', 'rar://p/__MACOSX/._ep01.srt')]
+                   ('ep01.srt', 'rar://p/Subs/ep01.srt'), ('._ep01.srt', 'rar://p/__MACOSX/._ep01.srt'),
+                   ('\udcd6\udcd0.srt', 'rar://p/\udcd6\udcd0.srt')]  # undecodable bytes, as libarchive lists them
         result = save_and_extract(tmpdir, 'pack.rar', b'Rar!', backend=lambda path: listing)
         assert (result.files, result.paths) == (['ep01.srt'], ['rar://p/ep01.srt'])
         result = save_and_extract(tmpdir, 'pack.rar', b'Rar!', backend=lambda path: 1 / 0)

@@ -47,6 +47,10 @@ def save_and_extract(dest, filename, data, backend=None):
     try:
         found = _unzip(path) if filename.lower().endswith(".zip") else backend(path) if backend else ()
         for name, entry_path in found:
+            try:  # bytes Kodi could not decode come back as lone surrogates; handing
+                name.encode("utf-8")  # such a name back to xbmcvfs segfaults Kodi
+            except UnicodeEncodeError:
+                continue
             if not name.startswith("._"):
                 entries.setdefault(name, entry_path)
     except Exception:
