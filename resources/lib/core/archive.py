@@ -70,7 +70,7 @@ def save_and_extract(dest, filename, data, backend=None):
         target, files = extract(path, backend)
         if files:
             return DownloadResult("ok", files=files, display_names=shorten_names(files),
-                                  paths=[os.path.join(target, f) for f in files])
+                                  paths=[f"{target}/{f}" for f in files])
     if filename.lower().endswith(SUBTITLE_EXTS):
         return DownloadResult("ok", files=[filename], display_names=[filename], paths=[path])
     return DownloadResult("invalid")
