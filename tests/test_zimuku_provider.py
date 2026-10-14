@@ -28,6 +28,17 @@ def test_zimuku_work_page_skips_linkless_rows(monkeypatch):
     assert [s.filename for s in subs] == ["Show.S01E01.srt"]
 
 
+def test_zimuku_episode_filter_tolerates_padding():
+    f = ZimukuProvider._episode_filter("1", "3")
+    for name in ("Show.S01E03.srt", "S1E03.srt", "Show.S01EP03.srt", "Show.E003.srt",
+                 "猫眼三姐妹 第3集.srt", "猫眼三姐妹 第03集.srt", "猫眼三姐妹 第 3 集.srt"):
+        assert f(name) == (True, False), name
+    for name in ("Show.S01E13.srt", "Show.S02E03.srt", "Show.E30.srt", "第13集.srt", "第30集.srt"):
+        assert f(name) == (False, False), name
+    assert f("Show.S01.Complete.rar") == (True, True)  # untagged pack entry
+    assert ZimukuProvider._episode_filter("1", "")("Show.E13.srt") == (True, False)
+
+
 def test_zimuku_find_works():
     provider = ZimukuProvider(log=lambda msg: print(f"  [zimuku] {msg}"))
 

@@ -241,11 +241,10 @@ class ZimukuProvider:
         """Return fn(name) -> (include, collection) matching the wanted episode."""
         if not (season and episode and str(season).isdigit() and str(episode).isdigit()):
             return lambda name: (True, False)
-        ep = int(episode)
-        tokens = [f"S{int(season):02d}E{ep:02d}", f"E{ep:02d}", f"EP{ep:02d}",
-                  f"E{ep}", f"EP{ep}", f"第{ep}集"]
+        s, ep = int(season), int(episode)
         tag_re = re.compile(r'(S\d{1,2}\s*(E|EP)\d{1,3})|(\bEP?\d{1,3}\b)|(第\s*\d+\s*集)')
-        ep_re = re.compile(rf'(?<!\d)({"|".join(re.escape(t) for t in tokens)})(?!\d)', re.IGNORECASE)
+        # uploaders pad and space markers freely: S01E03, S1E3, E003, 第03集, 第 3 集
+        ep_re = re.compile(rf'(?<!\d)(?:S0*{s}\s*EP?0*{ep}|EP?0*{ep}|第\s*0*{ep}\s*集)(?!\d)', re.I)
 
         def matches(name):
             upper = name.upper()
