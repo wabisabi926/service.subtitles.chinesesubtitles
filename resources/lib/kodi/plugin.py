@@ -356,11 +356,8 @@ def do_download(link, provider):
 # ---- entry ----
 
 def run():
-    params = {}
-    if len(sys.argv) >= 3 and len(sys.argv[2]) >= 2:
-        for key, values in urllib.parse.parse_qs(
-                sys.argv[2].lstrip("?"), keep_blank_values=True).items():
-            params[key] = values[0]
+    query = sys.argv[2].lstrip("?") if len(sys.argv) > 2 else ""
+    params = {k: v[0] for k, v in urllib.parse.parse_qs(query, keep_blank_values=True).items()}
     log(f"handle params: {params}")
 
     if __addon__.getSetting("proxy_follow_kodi") != "true":
