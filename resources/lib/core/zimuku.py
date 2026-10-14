@@ -81,7 +81,6 @@ class ZimukuSolver:
 
 
 class ZimukuProvider:
-    name = "zimuku"
     BASE_URL = "https://zimuku.org"
 
     def __init__(self, log=noop_log, backend=None):

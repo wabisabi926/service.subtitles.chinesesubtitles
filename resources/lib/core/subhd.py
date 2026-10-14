@@ -16,7 +16,6 @@ SOURCE_MAP = {"转载精修": "reprint", "官方字幕": "official", "原创翻�
 
 
 class SubhdProvider:
-    name = "subhd"
     BASE_URL = "https://subhd.tv"
 
     def __init__(self, log=noop_log, backend=None):

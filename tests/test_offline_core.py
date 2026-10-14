@@ -84,8 +84,6 @@ def test_order_works_season_first_then_year():
 # ---- service orchestration ----
 
 class FakeProvider:
-    name = "fake"
-
     def __init__(self, log=None, backend=None):
         self.log = log
 
