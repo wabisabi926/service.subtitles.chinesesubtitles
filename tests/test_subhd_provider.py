@@ -37,7 +37,7 @@ def test_subhd_parse_list_splits_by_header(monkeypatch):
     subs = provider.search(WorkQuery(title="Show", season="1", episode="3", is_tv=True), work)
     pack, episode = subs
     assert (pack.filename, pack.link, pack.tags.collection) == ("Pack.S01", "https://subhd.tv/a/AAA", True)
-    assert (pack.tags.source, pack.tags.lang, pack.tags.bilingual, pack.tags.fmt, pack.tags.fansub) == \
+    assert (pack.tags.src, pack.tags.lang, pack.tags.bilingual, pack.tags.fmt, pack.tags.fansub) == \
         (["official"], ["chs", "eng"], True, ["srt"], "组")
     assert (episode.filename, episode.tags.collection, episode.tags.lang, episode.tags.fansub) == \
         ("Ep3.srt", False, ["cht"], "user")

@@ -22,7 +22,7 @@ from core.autosave import fanout_names, playback_candidates, rename_map
 from core.filter import apply_filters
 from core.matcher import (FOLDER_SEASON_RE, VIDEO_EXTS, episode_marker, parse_filename,
                           season_number)
-from core.models import FORMATS, LANGS, SOURCES, WorkQuery, build_label, language_meta
+from core.models import FILTER_GROUPS, LANGS, WorkQuery, build_label, language_meta
 
 __addon__ = xbmcaddon.Addon()
 __scriptid__ = __addon__.getAddonInfo("id")
@@ -81,10 +81,7 @@ def clean_temp():
 def filter_settings():
     """Read addon settings into the plain dict core's filter expects
     (dropping the settings ids' filter_ prefix)."""
-    keys = (["bilingual"]
-            + [f"src_{k}" for k in SOURCES]
-            + [f"lang_{k}" for k in LANGS]
-            + [f"fmt_{k}" for k in FORMATS])
+    keys = ["bilingual"] + [f"{g}_{k}" for g, vocab in FILTER_GROUPS.items() for k in vocab]
     return {k: __addon__.getSetting("filter_" + k) == "true" for k in keys}
 
 

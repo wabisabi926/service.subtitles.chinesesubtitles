@@ -67,10 +67,8 @@ class FakeAddon:
 def addon_with(**overrides):
     """Addon whose settings are all on, except the overrides
     (given as unprefixed keys like lang_eng=False)."""
-    ids = (["filter_bilingual"]
-           + [f"filter_src_{k}" for k in plugin.SOURCES]
-           + [f"filter_lang_{k}" for k in plugin.LANGS]
-           + [f"filter_fmt_{k}" for k in plugin.FORMATS])
+    ids = ["filter_bilingual"] + [f"filter_{g}_{k}" for g, vocab in plugin.FILTER_GROUPS.items()
+                                  for k in vocab]
     values = {i: "true" for i in ids}
     values["filter_bilingual"] = "false"  # bilingual-only stays off by default
     values.update({f"filter_{k}": "false" for k in overrides})
@@ -255,6 +253,6 @@ def test_filter_settings_drive_core_filter(monkeypatch):
     from core.models import Subtitle, Tags
 
     monkeypatch.setattr(plugin, "__addon__", addon_with(src_machine=False))
-    good = Subtitle("a.srt", "l1", Tags(lang=["chs"], fmt=["srt"], source=["official"]))
-    machine = Subtitle("b.srt", "l2", Tags(lang=["chs"], fmt=["srt"], source=["machine"]))
+    good = Subtitle("a.srt", "l1", Tags(lang=["chs"], fmt=["srt"], src=["official"]))
+    machine = Subtitle("b.srt", "l2", Tags(lang=["chs"], fmt=["srt"], src=["machine"]))
     assert apply_filters([good, machine], plugin.filter_settings()) == [good]

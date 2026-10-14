@@ -18,7 +18,7 @@ from core.models import Subtitle, Tags, Work, WorkQuery, build_label, language_m
 
 def make_sub(langs=(), fmts=("srt",), sources=(), bilingual=False):
     return Subtitle("n", "l", Tags(lang=list(langs), fmt=list(fmts),
-                                    source=list(sources), bilingual=bilingual))
+                                    src=list(sources), bilingual=bilingual))
 
 
 ALL_TRUE = {
@@ -263,7 +263,7 @@ def test_download_dispatch(monkeypatch):
 # ---- models ----
 
 def test_build_label():
-    tags = Tags(lang=["chs", "eng"], fmt=["ass"], source=["official"],
+    tags = Tags(lang=["chs", "eng"], fmt=["ass"], src=["official"],
                 production="电影", fansub="YYeTs")
     assert build_label(tags, filename="name.ass") == "[电影][简英][官方][ASS][YYeTs] name.ass"
 
@@ -374,7 +374,7 @@ def test_filter_language():
 def test_filter_source():
     subs = [make_sub(sources=["official"]), make_sub(sources=["machine"])]
     kept = apply_filters(subs, {**ALL_TRUE, "src_machine": False})
-    assert [s.tags.source for s in kept] == [["official"]]
+    assert [s.tags.src for s in kept] == [["official"]]
 
 
 def test_filter_format():
@@ -399,7 +399,7 @@ def test_filter_sorts_by_language_then_source():
         make_sub(langs=["eng"]),                                   # tier 4
     ]
     kept = apply_filters(subs, ALL_TRUE)
-    assert [(s.tags.lang, s.tags.source) for s in kept] == [
+    assert [(s.tags.lang, s.tags.src) for s in kept] == [
         (["chs"], ["official"]), (["chs"], ["ai"]), (["chs"], ["machine"]),
         (["cht"], []), (["eng"], []),
     ]

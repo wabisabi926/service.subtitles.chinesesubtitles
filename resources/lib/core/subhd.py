@@ -81,7 +81,7 @@ class SubhdProvider:
             if "rounded" in classes and "text-white" in classes:
                 for cn, key in SOURCE_MAP.items():
                     if cn in text:
-                        tags.source.append(key)
+                        tags.src.append(key)
                         break
             if "fw-bold" in classes:
                 tags.lang += languages_in(text)

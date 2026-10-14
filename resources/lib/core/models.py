@@ -34,7 +34,7 @@ class Tags:
     """Parsed metadata of one subtitle entry."""
     lang: list = field(default_factory=list)    # chs / cht / eng
     fmt: list = field(default_factory=list)     # ass / srt / ssa / sub / sup / vtt
-    source: list = field(default_factory=list)  # official / reprint / original / ai / machine
+    src: list = field(default_factory=list)     # official / reprint / original / ai / machine
     bilingual: bool = False
     collection: bool = False
     fansub: str = ""
@@ -62,10 +62,11 @@ class DownloadResult:
 
 
 # canonical vocabularies of the Tags fields; SOURCES is ordered best-first
-# (the filter ranks by that order, settings ids are filter_{group}_{key})
 LANGS = ("chs", "cht", "eng")
 FORMATS = ("ass", "srt", "ssa", "sub", "sup", "vtt")
 SOURCES = ("official", "reprint", "original", "ai", "machine")
+# the filterable Tags fields and their vocabularies; settings ids are filter_{field}_{key}
+FILTER_GROUPS = {"src": SOURCES, "lang": LANGS, "fmt": FORMATS}
 
 LANG_MARKS = {"chs": "简", "cht": "繁", "eng": "英"}
 # what marks each language in a site badge or a filename ("简体中文", "chs&eng", "简英")
@@ -84,7 +85,7 @@ def build_label(tags, filename=""):
     """Display label such as [电影][简英][官方][ASS][合集][YYeTs] name.srt."""
     parts = (tags.production,
              "".join(LANG_MARKS[x] for x in LANGS if x in tags.lang),
-             next((text for key, text in SOURCE_LABELS.items() if key in tags.source), ""),
+             next((text for key, text in SOURCE_LABELS.items() if key in tags.src), ""),
              next((text for key, text in FORMAT_LABELS.items() if key in tags.fmt), ""),
              "合集" if tags.collection else "",
              tags.fansub)
