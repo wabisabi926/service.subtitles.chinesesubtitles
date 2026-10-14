@@ -328,6 +328,9 @@ def test_parse_filename_no_markers():
 def test_filename_from_headers():
     assert filename_from_headers('attachment; filename="a.srt"') == "a.srt"
     assert filename_from_headers("attachment; filename*=UTF-8''%E4%B8%AD.srt") == "中.srt"
+    latin1 = 'attachment; filename="' + "猫眼.rar".encode("utf-8").decode("latin-1") + '"'
+    assert filename_from_headers(latin1) == "猫眼.rar"
+    assert filename_from_headers('attachment; filename="caf\xe9.srt"') == "caf\xe9.srt"
     assert filename_from_headers(None, url="http://x/y/sub.zip") == "sub.zip"
     assert filename_from_headers(None) is None
     assert filename_from_headers(None, url="http://x/", default="f.bin") == "f.bin"

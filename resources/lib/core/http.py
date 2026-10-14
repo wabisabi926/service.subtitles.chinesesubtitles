@@ -46,7 +46,12 @@ def filename_from_headers(content_disposition, url=None, default=None):
             return html.unescape(urllib.parse.unquote(raw))
         plain = re.findall(r"filename\s*=\s*(\".*?\"|[^;]+)", cd, flags=re.IGNORECASE)
         if plain:
-            return html.unescape(plain[0].strip().strip('"').strip("'"))
+            raw = plain[0].strip().strip('"').strip("'")
+            try:  # sites send raw UTF-8 here, which http.client decoded as latin-1
+                raw = raw.encode("latin-1").decode("utf-8")
+            except UnicodeError:
+                pass
+            return html.unescape(raw)
     if url:
         tail = os.path.basename(urllib.parse.urlparse(url).path)
         if tail:
