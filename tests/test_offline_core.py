@@ -268,6 +268,14 @@ def test_build_label():
     assert build_label(tags, filename="name.ass") == "[电影][简英][官方][ASS][YYeTs] name.ass"
 
 
+def test_languages_in():
+    from core.models import languages_in
+    assert languages_in("简体中文字幕 English字幕 双语字幕") == ["chs", "eng"]
+    assert languages_in("Movie.cht&eng.srt") == ["cht", "eng"]
+    assert languages_in("简繁") == ["chs", "cht"]
+    assert languages_in("Movie.2010.srt") == []
+
+
 def test_build_label_collection():
     tags = Tags(collection=True)
     assert build_label(tags) == "[合集]"

@@ -3,6 +3,7 @@
 import re
 
 from .matcher import episode_marker
+from .models import languages_in
 
 _LANG_CODE = r'(?:chs|cht|chi|eng|zho|jpn|kor|sc|tc)'
 LANG_TAG_RE = re.compile(r'(?:^|[.\-_ ])(' + _LANG_CODE + r'(?:[&+]' + _LANG_CODE + r')*)'
@@ -18,9 +19,6 @@ def lang_tag(name):
     m = CN_LANG_TAG_RE.search(name)
     return m.group(0) if m else ""
 
-
-LANG_HINTS = {"chs": ("chs", "简体", "简", "sc"), "cht": ("cht", "繁體", "繁体", "tc", "繁"),
-              "eng": ("eng",)}
 
 _CH_CODE = r'(?:chs|cht|chi|zho|sc|tc)'
 # a Chinese+English twin: chs&eng, eng.cht, 简英, 中英双语 ...
@@ -85,9 +83,8 @@ def variant_rank(name, preferred=("chs", "cht", "eng")):
     """Sort key among language twins: earliest `preferred` language first,
     a bilingual name beating a single-language one at the same rank
     (mirroring the search listing's bilingual-first sort)."""
-    low = name.lower()
-    tier = next((i for i, lang in enumerate(preferred)
-                 if any(h in low for h in LANG_HINTS.get(lang, ()))), len(preferred))
+    langs = languages_in(name)
+    tier = next((i for i, lang in enumerate(preferred) if lang in langs), len(preferred))
     return (tier, 0 if BILINGUAL_RE.search(name) else 1)
 
 

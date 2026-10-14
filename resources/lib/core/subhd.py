@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from .archive import save_and_extract
 from .http import filename_from_headers, make_session, noop_log
 from .matcher import episode_marker
-from .models import FORMATS, DownloadResult, Subtitle, Tags
+from .models import FORMATS, DownloadResult, Subtitle, Tags, languages_in
 
 # Chinese origin badge -> normalized source tag
 SOURCE_MAP = {"转载精修": "reprint", "官方字幕": "official", "原创翻译": "original",
@@ -84,10 +84,8 @@ class SubhdProvider:
                         tags.source.append(key)
                         break
             if "fw-bold" in classes:
-                if "简体" in text: tags.lang.append("chs")
-                if "繁体" in text: tags.lang.append("cht")
-                if "英语" in text: tags.lang.append("eng")
-                if "双语" in text: tags.bilingual = True
+                tags.lang += languages_in(text)
+                tags.bilingual |= "双语" in text
             if "text-secondary" in classes:
                 for fmt in FORMATS:
                     if fmt.upper() in text.upper():

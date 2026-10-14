@@ -10,11 +10,10 @@ from bs4 import BeautifulSoup
 from .archive import ARCHIVE_EXTS, SUBTITLE_EXTS, save_and_extract
 from .http import filename_from_headers, make_session, noop_log
 from .matcher import episode_marker, parse_meta
-from .models import DownloadResult, Subtitle, Tags, Work
+from .models import DownloadResult, Subtitle, Tags, Work, languages_in
 
 MAX_CAPTCHA_RETRIES = 3
 FILE_MIN_SIZE = 1024  # smaller responses are error pages, not subtitles
-LANG_BADGES = {"简体中文": "chs", "繁體中文": "cht", "English": "eng"}  # row icon title -> tag
 
 
 class ZimukuSolver:
@@ -203,10 +202,10 @@ class ZimukuProvider:
 
     def _parse_row(self, row, collection):
         td = row.find("td", class_="tac lang")
-        langs = [img.get("title", "").rstrip("字幕") for img in td.find_all("img")] if td else []
+        langs = " ".join(img.get("title", "") for img in td.find_all("img")) if td else ""
         fmt = row.find("span", class_="label-info")
         fansub = row.select_one('a[href^="/t/"]') or row.find("span", class_="label-danger")
-        tags = Tags(lang=[code for badge, code in LANG_BADGES.items() if badge in langs],
+        tags = Tags(lang=languages_in(langs),
                     fmt=[f.strip() for f in fmt.text.lower().split("/")] if fmt else [],
                     bilingual="双语" in langs, collection=collection,
                     fansub=fansub.text.strip() if fansub else "")

@@ -68,6 +68,14 @@ FORMATS = ("ass", "srt", "ssa", "sub", "sup", "vtt")
 SOURCES = ("official", "reprint", "original", "ai", "machine")
 
 LANG_MARKS = {"chs": "简", "cht": "繁", "eng": "英"}
+# what marks each language in a site badge or a filename ("简体中文", "chs&eng", "简英")
+LANG_WORDS = {"chs": ("chs", "简", "sc"), "cht": ("cht", "繁", "tc"), "eng": ("eng", "英")}
+
+
+def languages_in(text):
+    """Tags whose markers appear in a badge text or filename, in LANGS order."""
+    low = text.lower()
+    return [code for code, words in LANG_WORDS.items() if any(w in low for w in words)]
 SOURCE_LABELS = {"official": "官方", "reprint": "精修", "original": "原创", "ai": "AI", "machine": "机翻"}
 FORMAT_LABELS = {fmt: fmt.upper() for fmt in FORMATS}
 
