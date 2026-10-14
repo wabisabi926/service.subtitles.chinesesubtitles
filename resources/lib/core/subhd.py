@@ -44,10 +44,7 @@ class SubhdProvider:
         content = self._get(urllib.parse.urljoin(self.BASE_URL, href))
         if not content:
             return []
-        results = self._parse_list(content, query.episode if query.is_tv else None)
-        for r in results:
-            r.tags.production = "剧集" if query.is_tv else "电影"
-        return results
+        return self._parse_list(content, query.episode if query.is_tv else None)
 
     def _parse_list(self, content, target_episode=None):
         """Parse the work page; bg-light headers split movie/collection/episode rows."""

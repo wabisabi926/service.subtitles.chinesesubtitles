@@ -245,7 +245,7 @@ def test_search_all_anchors_and_isolation(monkeypatch):
     patch_providers(monkeypatch, {"subhd": FakeProvider, "zimuku": RaisingProvider})
     work = Work(title="绝命毒师 第二季", anchors={"subhd": "/d/1"})
     subs = service.search_all(query, work, log=lambda msg: None)
-    assert len(subs) == 1 and subs[0].tags.provider == "subhd"
+    assert len(subs) == 1 and (subs[0].tags.provider, subs[0].tags.production) == ("subhd", "剧集")
 
     # a raising site degrades to nothing, the healthy one survives
     work = Work(title="绝命毒师 第二季", anchors={"subhd": "/d/1", "zimuku": "u"})

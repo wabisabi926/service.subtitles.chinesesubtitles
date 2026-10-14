@@ -48,7 +48,7 @@ def test_zimuku_work_page_parses_row_tags(monkeypatch):
     pack, episode = subs  # rows come newest-last on the site, so reversed
     assert (episode.filename, episode.link) == ("Show.S01E01.chs&eng.ass", "https://zimuku.org/detail/1.html")
     assert (episode.tags.lang, episode.tags.bilingual, episode.tags.fmt) == (["chs", "eng"], True, ["ass", "srt"])
-    assert (episode.tags.fansub, episode.tags.collection, episode.tags.production) == ("YYeTs", False, "剧集")
+    assert (episode.tags.fansub, episode.tags.collection) == ("YYeTs", False)
     assert (pack.tags.lang, pack.tags.fmt, pack.tags.fansub, pack.tags.collection) == (["cht"], [], "热门", True)
 
 

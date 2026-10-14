@@ -193,17 +193,16 @@ class ZimukuProvider:
         subs = []
         box = BeautifulSoup(data, "html.parser").select_one("div.subs.box.clearfix")
         if box and box.tbody:
-            production = "剧集" if query.is_tv else "电影"
             matches_episode = self._episode_filter(query.season, query.episode)
             for row in reversed(box.tbody.find_all("tr")):
                 if not row.a:  # a linkless row must not sink the whole page
                     continue
                 include, collection = matches_episode(row.a.text)
                 if include:
-                    subs.append(self._parse_row(row, production, collection))
+                    subs.append(self._parse_row(row, collection))
         return douban, subs
 
-    def _parse_row(self, row, production, collection):
+    def _parse_row(self, row, collection):
         td = row.find("td", class_="tac lang")
         langs = [img.get("title", "").rstrip("字幕") for img in td.find_all("img")] if td else []
         fmt = row.find("span", class_="label-info")
@@ -211,7 +210,7 @@ class ZimukuProvider:
         tags = Tags(lang=[code for badge, code in LANG_BADGES.items() if badge in langs],
                     fmt=[f.strip() for f in fmt.text.lower().split("/")] if fmt else [],
                     bilingual="双语" in langs, collection=collection,
-                    fansub=fansub.text.strip() if fansub else "", production=production)
+                    fansub=fansub.text.strip() if fansub else "")
         return Subtitle(row.a.text, urllib.parse.urljoin(self.BASE_URL, row.a["href"]), tags)
 
     @staticmethod

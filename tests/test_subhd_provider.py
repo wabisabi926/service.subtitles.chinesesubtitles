@@ -41,7 +41,6 @@ def test_subhd_parse_list_splits_by_header(monkeypatch):
         (["official"], ["chs", "eng"], True, ["srt"], "组")
     assert (episode.filename, episode.tags.collection, episode.tags.lang, episode.tags.fansub) == \
         ("Ep3.srt", False, ["cht"], "user")
-    assert all(s.tags.production == "剧集" for s in subs)
     everything = provider.search(WorkQuery(title="Show"), work)
     assert [s.filename for s in everything] == ["Pack.S01", "Ep3.srt", "Ep5.srt"]
 

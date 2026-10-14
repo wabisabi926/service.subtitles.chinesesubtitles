@@ -103,10 +103,10 @@ def _bridge(zimuku, query, work, log):
 
 def search_all(query, work, log=noop_log):
     """Collect the subtitles of every anchored site; tags.provider marks
-    each result's origin. Results preloaded during resolution pass through
-    as-is (normally only SubHD is fetched here); site failures degrade to
-    empty lists."""
-    subtitles = []
+    each result's origin and tags.production the kind of work. Results
+    preloaded during resolution pass through as-is (normally only SubHD is
+    fetched here); site failures degrade to empty lists."""
+    subtitles, production = [], "剧集" if query.is_tv else "电影"
     for name, cls in PROVIDERS.items():
         found = work.preloaded.get(name) if work else None
         if found is None and work and name in work.anchors:
@@ -116,7 +116,7 @@ def search_all(query, work, log=noop_log):
                 log(f"{name}: search failed: {e}")
                 found = []
         for s in found or ():
-            s.tags.provider = name
+            s.tags.provider, s.tags.production = name, production
             subtitles.append(s)
     return subtitles
 
