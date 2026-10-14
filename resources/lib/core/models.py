@@ -58,6 +58,7 @@ class DownloadResult:
     files: list = field(default_factory=list)
     display_names: list = field(default_factory=list)  # shortened names for pickers
     paths: list = field(default_factory=list)
+    entries: list = field(default_factory=list)  # what an archive held when 'invalid'
 
 
 # canonical vocabularies of the Tags fields; SOURCES is ordered best-first

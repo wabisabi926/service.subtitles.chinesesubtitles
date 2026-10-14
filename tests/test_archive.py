@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Offline tests for the zip extractor and GBK filename recovery."""
+import io
 import os
 import struct
 import sys
@@ -12,7 +13,7 @@ if lib_dir not in sys.path:
     sys.path.insert(0, lib_dir)
 
 from core._gbk_codec import decode_gbk, fix_zip_filename
-from core.archive import _extract_zip
+from core.archive import _extract_zip, save_and_extract
 
 
 def test_decode_gbk_basic():
@@ -78,13 +79,28 @@ def test_extract_zip_cjk_filename():
         assert os.path.exists(os.path.join(target, '中文字幕.srt'))
 
 
-def test_extract_zip_skips_non_subtitles():
+def test_extract_zip_lists_but_skips_non_subtitles():
     with tempfile.TemporaryDirectory() as tmpdir:
         zip_path = os.path.join(tmpdir, 'test.zip')
         with zipfile.ZipFile(zip_path, 'w') as zf:
             zf.writestr('readme.txt', 'not a subtitle')
         target, files = _extract_zip(zip_path)
-        assert files == []
+        assert files == ['readme.txt']
+        assert not os.path.exists(os.path.join(target, 'readme.txt'))
+
+
+def test_save_and_extract_reports_archive_contents():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as zf:
+            zf.writestr('share.doc', 'pan link')
+            zf.writestr('readme.txt', 'noise')
+        result = save_and_extract(tmpdir, 'pack.zip', buf.getvalue())
+        assert result.status == 'invalid' and result.entries == ['share.doc', 'readme.txt']
+        with zipfile.ZipFile(buf, 'a') as zf:
+            zf.writestr('Movie.srt', '1\n')
+        result = save_and_extract(tmpdir, 'pack.zip', buf.getvalue())
+        assert result.status == 'ok' and result.files == ['Movie.srt']
 
 
 def test_extract_zip_dedupes_flattened_basenames():
@@ -107,5 +123,6 @@ def test_extract_zip_keeps_vobsub_sidecar():
             zf.writestr('pack.chs.idx', b'VobSub index')
             zf.writestr('readme.txt', 'noise')
         target, files = _extract_zip(zip_path)
-        assert files == ['pack.chs.sub']  # pickable subtitles only
+        assert files == ['pack.chs.sub', 'pack.chs.idx', 'readme.txt']
         assert os.path.exists(os.path.join(target, 'pack.chs.idx'))  # sidecar saved
+        assert not os.path.exists(os.path.join(target, 'readme.txt'))

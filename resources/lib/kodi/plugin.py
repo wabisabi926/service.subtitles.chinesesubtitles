@@ -60,8 +60,8 @@ def extract_archive(path):
     target = url
     if not any(f.lower().endswith(SUBTITLE_EXTS) for f in files) and dirs:
         target = url + "/" + dirs[0]
-        dirs, files = xbmcvfs.listdir(target)
-    return target, [f for f in files if f.lower().endswith(SUBTITLE_EXTS)]
+        files = xbmcvfs.listdir(target)[1]
+    return target, files
 
 
 def clean_temp():
@@ -320,17 +320,22 @@ def autosave(result):
     return paths[picked] if picked else ""
 
 
+def failure_text(result):
+    """What to tell the user about a download that yielded no subtitle."""
+    if result.reason:
+        return result.reason
+    if result.entries:
+        return __language__(30906) % ", ".join(result.entries)
+    return __language__(30902 if result.status == "invalid" else 30905)
+
+
 def do_download(link, provider):
     clean_temp()
     log(f"download {provider}: {link}")
     result = service.download(link, provider, __temp__, log=log, backend=extract_archive)
-    if result.status == "invalid":
+    if result.status != "ok":
         icon = os.path.join(__cwd__, "resources", "icon.png")
-        xbmcgui.Dialog().notification(__scriptname__, __language__(30902), icon, 4000)
-    if result.reason:
-        icon = os.path.join(__cwd__, "resources", "icon.png")
-        xbmcgui.Dialog().notification(__scriptname__, result.reason, icon, 4000)
-    if not result.files:
+        xbmcgui.Dialog().notification(__scriptname__, failure_text(result), icon, 4000)
         return []
     picked = autosave(result)
     if picked:

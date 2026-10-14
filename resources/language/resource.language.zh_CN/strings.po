@@ -37,6 +37,14 @@ msgctxt "#30904"
 msgid "Choose Subtitle"
 msgstr "选择字幕"
 
+msgctxt "#30905"
+msgid "Download failed"
+msgstr "下载失败"
+
+msgctxt "#30906"
+msgid "No subtitle in the archive: %s"
+msgstr "压缩包内没有字幕：%s"
+
 msgctxt "#30260"
 msgid "Only show bilingual subtitles"
 msgstr "仅显示双语字幕"

@@ -14,7 +14,7 @@ ARCHIVE_EXTS = (".zip", ".7z", ".tar", ".bz2", ".rar", ".gz", ".xz", ".iso", ".t
 
 
 def extract(path, backend=None):
-    """Extract an archive; return (target_dir, file_names).
+    """Extract an archive; return (target_dir, entry_names).
 
     zip is handled natively; any other format is delegated to
     backend(path) when the host provides one (Kodi: vfs.rar / vfs.libarchive).
@@ -30,32 +30,26 @@ def extract(path, backend=None):
 
 
 def _extract_zip(path):
-    """Extract subtitle entries from a zip, recovering GBK-mojibake filenames."""
+    """Extract the subtitle entries of a zip, recovering GBK-mojibake
+    filenames; the returned names cover every entry."""
     try:
         with zipfile.ZipFile(path, "r") as zf:
-            entries, seen = [], set()
+            entries = {}
             for info in zf.infolist():
                 if info.is_dir():
                     continue
                 # Without the UTF-8 flag zipfile decodes names as cp437
                 name = info.filename if (info.flag_bits & 0x800) else fix_zip_filename(info.filename)
-                name = os.path.basename(name)
-                # entries are flattened to basenames: a same-named file in
-                # another folder would overwrite the first, so keep only that
-                if name in seen or not name.lower().endswith(
-                        SUBTITLE_EXTS + SUBTITLE_SIDECAR_EXTS):
-                    continue
-                seen.add(name)
-                entries.append((name, info))
-            if not any(name.lower().endswith(SUBTITLE_EXTS) for name, _ in entries):
-                return None, []  # sidecars alone are not a subtitle download
+                # flattened to basenames: a same-named file in another folder
+                # would overwrite the first, so only the first is kept
+                entries.setdefault(os.path.basename(name), info)
             target = path + "_extracted"
             os.makedirs(target, exist_ok=True)
-            for name, info in entries:
-                with zf.open(info) as src, open(os.path.join(target, name), "wb") as dst:
-                    dst.write(src.read())
-            return target, [name for name, _ in entries
-                            if name.lower().endswith(SUBTITLE_EXTS)]
+            for name, info in entries.items():
+                if name.lower().endswith(SUBTITLE_EXTS + SUBTITLE_SIDECAR_EXTS):
+                    with zf.open(info) as src, open(os.path.join(target, name), "wb") as dst:
+                        dst.write(src.read())
+            return target, list(entries)
     except Exception:
         return None, []
 
@@ -67,10 +61,12 @@ def save_and_extract(dest, filename, data, backend=None):
     with open(path, "wb") as f:
         f.write(data)
     if filename.lower().endswith(ARCHIVE_EXTS):
-        target, files = extract(path, backend)
+        target, entries = extract(path, backend)
+        files = [f for f in entries if f.lower().endswith(SUBTITLE_EXTS)]
         if files:
             return DownloadResult("ok", files=files, display_names=shorten_names(files),
                                   paths=[f"{target}/{f}" for f in files])
+        return DownloadResult("invalid", entries=entries)
     if filename.lower().endswith(SUBTITLE_EXTS):
         return DownloadResult("ok", files=[filename], display_names=[filename], paths=[path])
     return DownloadResult("invalid")

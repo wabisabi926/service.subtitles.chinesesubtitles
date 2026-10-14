@@ -15,6 +15,7 @@ if lib_dir not in sys.path:
 
 import xbmc
 import xbmcvfs
+from core.models import DownloadResult
 from kodi import plugin
 
 
@@ -205,6 +206,15 @@ def test_clean_temp_wipes_and_clears_kodi_cache(monkeypatch, tmp_path):
     plugin.clean_temp()
     assert temp.is_dir() and list(temp.iterdir()) == []
     assert deleted == [str(temp / ".cache")]
+
+
+def test_failure_text_prefers_the_most_specific_message(monkeypatch):
+    monkeypatch.setattr(plugin, "__language__",
+                        {30902: "invalid", 30905: "failed", 30906: "no subtitle: %s"}.get)
+    assert plugin.failure_text(DownloadResult(reason="SubHD: 下载频率过高")) == "SubHD: 下载频率过高"
+    assert plugin.failure_text(DownloadResult("invalid", entries=["a.doc", "b.txt"])) == "no subtitle: a.doc, b.txt"
+    assert plugin.failure_text(DownloadResult("invalid")) == "invalid"
+    assert plugin.failure_text(DownloadResult()) == "failed"
 
 
 def test_filter_settings_drop_the_filter_prefix(monkeypatch):
