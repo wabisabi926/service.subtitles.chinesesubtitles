@@ -566,14 +566,14 @@ def test_fanout_names_without_pick():
     assert sorted(fanout_names(mapping, "", video_stem="Show.S01E02")) == subs
 
 
-def test_is_bilingual_markers():
-    from core.autosave import is_bilingual
+def test_bilingual_markers():
+    from core.autosave import BILINGUAL_RE
     for name in ("X.chs&eng.ass", "X.cht+eng.ass", "X.chs.eng.srt", "X.eng&chs.srt",
                  "X.简英.srt", "X.繁英.ass", "X.中英双语.srt", "X.简体&英文.srt",
                  "X.简体中文&英文.srt", "X.中文&英文.srt"):
-        assert is_bilingual(name), name
+        assert BILINGUAL_RE.search(name), name
     for name in ("X.chs.ass", "X.eng.srt", "X.England.chs.srt", "X.简体.srt"):
-        assert not is_bilingual(name), name
+        assert not BILINGUAL_RE.search(name), name
 
 
 def test_lang_tag_composites():

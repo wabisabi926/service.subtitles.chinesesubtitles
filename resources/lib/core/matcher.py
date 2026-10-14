@@ -89,13 +89,9 @@ JUNK_TAGS = {
 }
 
 
-def _any_of(tags):
-    """Literal-tag alternation, longest first so 'webdl' is not
-    half-stripped by 'web'."""
-    return "|".join(re.escape(t) for t in sorted(tags, key=len, reverse=True))
-
-
-RELEASE_JUNK_RE = re.compile(_any_of(sum(JUNK_TAGS.values(), ())), re.I)
+# longest tag first so 'webdl' is not half-stripped by 'web'
+RELEASE_JUNK_RE = re.compile("|".join(
+    re.escape(t) for t in sorted(sum(JUNK_TAGS.values(), ()), key=len, reverse=True)), re.I)
 
 
 def parse_filename(name):

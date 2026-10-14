@@ -23,15 +23,11 @@ LANG_HINTS = {"chs": ("chs", "简体", "简", "sc"), "cht": ("cht", "繁體", "�
               "eng": ("eng",)}
 
 _CH_CODE = r'(?:chs|cht|chi|zho|sc|tc)'
+# a Chinese+English twin: chs&eng, eng.cht, 简英, 中英双语 ...
 BILINGUAL_RE = re.compile(
     r'双语|(?:中文?|[简繁][体體]?(?:中文)?)\s*[&+]?\s*英'
     r'|(?:^|[.\-_ ])' + _CH_CODE + r'[&+.\-_ ]eng(?![a-z0-9])'
     r'|(?:^|[.\-_ ])eng[&+.\-_ ]' + _CH_CODE + r'(?![a-z0-9])', re.I)
-
-
-def is_bilingual(name):
-    """Whether a filename marks a Chinese+English twin (chs&eng, 简英, 双语...)."""
-    return bool(BILINGUAL_RE.search(name))
 
 
 def _tagged_stem(stem, name, used):
@@ -92,7 +88,7 @@ def variant_rank(name, preferred=("chs", "cht", "eng")):
     low = name.lower()
     tier = next((i for i, lang in enumerate(preferred)
                  if any(h in low for h in LANG_HINTS.get(lang, ()))), len(preferred))
-    return (tier, 0 if is_bilingual(name) else 1)
+    return (tier, 0 if BILINGUAL_RE.search(name) else 1)
 
 
 def playback_candidates(mapping, video_stem, preferred=("chs", "cht", "eng")):

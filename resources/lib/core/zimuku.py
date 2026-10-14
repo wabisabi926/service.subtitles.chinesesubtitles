@@ -64,7 +64,8 @@ class ZimukuSolver:
                 1 if self._is_foreground(char_x + px - one_offset, py) else 0
                 for px, py in self.SAMPLE_POINTS
             ]
-            digit = self._match_digit(features)
+            digit = min(self.TEMPLATES,
+                        key=lambda d: sum(f != t for f, t in zip(features, self.TEMPLATES[d])))
             if digit == '1':
                 one_offset += 1
             elif digit == '4':
@@ -77,16 +78,6 @@ class ZimukuSolver:
         offset = self.PIXEL_DATA_OFFSET + bmp_y * self._stride + x * 3
         b, g, r = self._data[offset], self._data[offset + 1], self._data[offset + 2]
         return (r + g + b) / 3 < threshold
-
-    def _match_digit(self, features):
-        best, min_diff = '?', float('inf')
-        for digit, template in self.TEMPLATES.items():
-            diff = sum(f != t for f, t in zip(features, template))
-            if diff < min_diff:
-                min_diff, best = diff, digit
-            if min_diff == 0:
-                break
-        return best
 
 
 class ZimukuProvider:

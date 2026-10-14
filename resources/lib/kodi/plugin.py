@@ -320,22 +320,16 @@ def autosave(result):
     return paths[picked] if picked else ""
 
 
-def failure_text(result):
-    """What to tell the user about a download that yielded no subtitle."""
-    if result.reason:
-        return result.reason
-    if result.entries:
-        return __language__(30906) % ", ".join(result.entries)
-    return __language__(30902 if result.status == "invalid" else 30905)
-
-
 def do_download(link, provider):
     clean_temp()
     log(f"download {provider}: {link}")
     result = service.download(link, provider, __temp__, log=log, backend=extract_archive)
     if result.status != "ok":
+        text = (result.reason
+                or result.entries and __language__(30906) % ", ".join(result.entries)
+                or __language__(30902 if result.status == "invalid" else 30905))
         icon = os.path.join(__cwd__, "resources", "icon.png")
-        xbmcgui.Dialog().notification(__scriptname__, failure_text(result), icon, 4000)
+        xbmcgui.Dialog().notification(__scriptname__, text, icon, 4000)
         return []
     picked = autosave(result)
     if picked:
