@@ -60,24 +60,16 @@ class SubhdProvider:
                 continue
             classes = child.get("class", [])
             if "bg-light" in classes:
-                text = child.get_text().strip()
+                text = child.get_text()
+                m = re.search(r"第\s*(\d+)\s*集", text)
                 if "合集" in text:
                     category = "collection"
-                elif "第" in text and "集" in text:
-                    match = re.search(r"第\s*(\d+)\s*集", text)
-                    category = int(match.group(1)) if match else "general"
                 else:
-                    category = "general"
+                    category = str(int(m.group(1))) if m else "general"
             elif "row" in classes:
-                if target_episode:
-                    if str(category) == str(target_episode):
-                        is_collection = False
-                    elif category == "collection":
-                        is_collection = True
-                    else:
-                        continue
-                else:
-                    is_collection = category == "collection"
+                is_collection = category == "collection"
+                if target_episode and not is_collection and category != str(target_episode):
+                    continue
                 link = child.select_one("a.link-dark")
                 if not link or not link.get("href", "").startswith("/a/"):
                     continue
