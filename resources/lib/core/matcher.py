@@ -47,15 +47,15 @@ VIDEO_EXTS = (".mkv", ".mp4", ".avi", ".wmv", ".mpg", ".mpeg", ".ts", ".m2ts",
 # trailing season marker in folder names: "电锯人 第一季", "Show Season 2", "Show S02"
 FOLDER_SEASON_RE = re.compile(rf'(?:{_CN_SEASON}|{_WORD_SEASON}|S(\d{{1,2}}))\s*$', re.I)
 # episode markers, most specific first; (?P<s>) is the season when the form carries one
-EPISODE_RES = (
-    re.compile(r'[sS](?P<s>\d{1,2})[.\s]*[eE](?P<e>\d{1,3})\b'),
-    re.compile(rf'第(?P<s>[{_CN_DIGITS}\d]+)季.*?第\s*(?P<e>\d+)\s*集'),
-    re.compile(r'\b[eE][pP]?(?P<e>\d{1,3})\b'),
-    re.compile(r'第\s*(?P<e>\d{1,3})\s*[集话話]'),
+EPISODE_RES = tuple(re.compile(p, re.I) for p in (
+    r's(?P<s>\d{1,2})[.\s]*e(?P<e>\d{1,3})\b',
+    rf'第(?P<s>[{_CN_DIGITS}\d]+)季.*?第\s*(?P<e>\d+)\s*集',
+    r'\bep?(?P<e>\d{1,3})\b',
+    r'第\s*(?P<e>\d{1,3})\s*[集话話]',
     # fansub "[Group] Title - 03 [BD]" / "- 03v2": the spaced dash excludes
     # DTS-HD, the lookahead excludes "- 1080p" and "- 5.1"
-    re.compile(r'(?:^|[\s_])-[\s_]*(?P<e>\d{1,3})(?:v\d)?(?=[\s_\[(]|\.(?!\d)|$)'),
-)
+    r'(?:^|[\s_])-[\s_]*(?P<e>\d{1,3})(?:v\d)?(?=[\s_\[(]|\.(?!\d)|$)',
+))
 YEAR_TOKEN_RE = re.compile(rf'^{_CENTURY}$')
 
 
