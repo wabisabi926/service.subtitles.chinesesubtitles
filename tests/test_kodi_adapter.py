@@ -194,6 +194,19 @@ def test_fanout_folder_follows_storage_mode(monkeypatch):
     assert plugin.fanout_folder("/videos/Show") == "/videos/Show"
 
 
+def test_clean_temp_wipes_and_clears_kodi_cache(monkeypatch, tmp_path):
+    temp = tmp_path / "temp"
+    (temp / "old_extracted").mkdir(parents=True)
+    (temp / "old.zip").write_bytes(b"x")
+    (temp / "old_extracted" / "a.srt").write_bytes(b"x")
+    deleted = []
+    monkeypatch.setattr(plugin, "__temp__", str(temp))
+    monkeypatch.setattr(xbmcvfs, "delete", lambda p: deleted.append(p) or os.remove(p))
+    plugin.clean_temp()
+    assert temp.is_dir() and list(temp.iterdir()) == []
+    assert deleted == [str(temp / ".cache")]
+
+
 def test_filter_settings_drop_the_filter_prefix(monkeypatch):
     monkeypatch.setattr(plugin, "__addon__", addon_with(lang_eng=False, src_machine=False))
     settings = plugin.filter_settings()

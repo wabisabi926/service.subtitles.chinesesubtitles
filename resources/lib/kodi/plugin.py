@@ -2,6 +2,7 @@
 """Kodi plugin layer: adapts the xbmc runtime to the pure core library."""
 import json
 import os
+import shutil
 import sys
 import urllib.parse
 
@@ -64,26 +65,18 @@ def extract_archive(path):
 
 
 def clean_temp():
-    """Wipe the addon temp dir so every download starts fresh."""
-    temp = __temp__.replace("\\", "/").rstrip("/")
-    if not xbmcvfs.exists(temp):
-        xbmcvfs.mkdirs(temp)
-        return
+    """Wipe the addon temp dir so every download starts fresh.
 
-    def wipe(path):
-        try:
-            dirs, files = xbmcvfs.listdir(path)
-        except Exception as e:
-            log(f"list {path} failed: {e}", xbmc.LOGWARNING)
-            return
-        for name in files:
-            if not xbmcvfs.delete(f"{path}/{name}"):
-                log(f"delete {path}/{name} failed", xbmc.LOGWARNING)
-        for name in dirs:
-            wipe(f"{path}/{name}")
-            xbmcvfs.rmdir(f"{path}/{name}")
-
-    wipe(temp)
+    Never list the folder through xbmcvfs: Kodi caches the listing and
+    then refuses to open any file Python writes there afterwards
+    (CFile::Open fails when the cached listing lacks the file). Deleting
+    one file through xbmcvfs drops that cache entry, hence the marker.
+    """
+    shutil.rmtree(__temp__, ignore_errors=True)
+    os.makedirs(__temp__, exist_ok=True)
+    marker = os.path.join(__temp__, ".cache")
+    open(marker, "wb").close()
+    xbmcvfs.delete(marker)
 
 
 def filter_settings():
