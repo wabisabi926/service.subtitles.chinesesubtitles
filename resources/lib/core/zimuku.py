@@ -14,6 +14,7 @@ from .models import DownloadResult, Subtitle, Tags, Work
 
 MAX_CAPTCHA_RETRIES = 3
 FILE_MIN_SIZE = 1024  # smaller responses are error pages, not subtitles
+LANG_BADGES = {"简体中文": "chs", "繁體中文": "cht", "English": "eng"}  # row icon title -> tag
 
 
 class ZimukuSolver:
@@ -212,27 +213,15 @@ class ZimukuProvider:
         return douban, subs
 
     def _parse_row(self, row, production, collection):
-        link = urllib.parse.urljoin(self.BASE_URL, row.a["href"])
-        langs = []
         td = row.find("td", class_="tac lang")
-        if td:
-            langs = [img.get("title", "").rstrip("字幕") for img in td.find_all("img")]
-        tags = Tags(production=production, collection=collection)
-        fmt_span = row.find("span", class_="label-info")
-        if fmt_span:
-            tags.fmt = [f.strip() for f in fmt_span.text.strip().lower().split("/")]
-        fansub_link = row.select_one('a[href^="/t/"]')
-        if fansub_link:
-            tags.fansub = fansub_link.text.strip()
-        else:
-            danger = row.find("span", class_="label-danger")
-            if danger:
-                tags.fansub = danger.text.strip()
-        if "简体中文" in langs: tags.lang.append("chs")
-        if "繁體中文" in langs: tags.lang.append("cht")
-        if "English" in langs: tags.lang.append("eng")
-        if "双语" in langs: tags.bilingual = True
-        return Subtitle(row.a.text, link, tags)
+        langs = [img.get("title", "").rstrip("字幕") for img in td.find_all("img")] if td else []
+        fmt = row.find("span", class_="label-info")
+        fansub = row.select_one('a[href^="/t/"]') or row.find("span", class_="label-danger")
+        tags = Tags(lang=[code for badge, code in LANG_BADGES.items() if badge in langs],
+                    fmt=[f.strip() for f in fmt.text.lower().split("/")] if fmt else [],
+                    bilingual="双语" in langs, collection=collection,
+                    fansub=fansub.text.strip() if fansub else "", production=production)
+        return Subtitle(row.a.text, urllib.parse.urljoin(self.BASE_URL, row.a["href"]), tags)
 
     @staticmethod
     def _episode_filter(season, episode):
