@@ -18,7 +18,7 @@ if lib_dir not in sys.path:
     sys.path.insert(0, lib_dir)
 
 from core.subhd import SubhdProvider
-from core.zimuku import ZimukuProvider, ZimukuSolver
+from core.zimuku import ZimukuSolver
 
 
 _ZIMUKU_POINTS = [(10, 7), (7, 8), (12, 8), (10, 13), (7, 19), (12, 19), (10, 20), (6, 13), (14, 13)]

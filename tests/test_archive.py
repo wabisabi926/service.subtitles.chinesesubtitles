@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Offline tests for the zip extractor and GBK filename recovery."""
+import io
 import os
 import struct
 import sys
@@ -12,7 +13,7 @@ if lib_dir not in sys.path:
     sys.path.insert(0, lib_dir)
 
 from core._gbk_codec import decode_gbk, fix_zip_filename
-from core.archive import _extract_zip
+from core.archive import _unzip, save_and_extract
 
 
 def test_decode_gbk_basic():
@@ -37,9 +38,11 @@ def test_fix_zip_filename_utf8_passthrough():
 
 
 def test_fix_zip_filename_garbled():
-    # zipfile decodes GBK bytes as cp437 when the UTF-8 flag is missing
-    garbled = '中文字幕.srt'.encode('gbk').decode('cp437')
-    assert fix_zip_filename(garbled) == '中文字幕.srt'
+    # zipfile decodes the raw bytes as cp437 when the UTF-8 flag is missing,
+    # whether they were GBK (Chinese Windows tools) or UTF-8 (macOS Finder)
+    for encoding in ('gbk', 'utf-8'):
+        garbled = '星际穿越.字幕.srt'.encode(encoding).decode('cp437')
+        assert fix_zip_filename(garbled) == '星际穿越.字幕.srt', encoding
 
 
 def _create_zip_with_gbk_filename(zip_path, filename_gbk_bytes, content=b'fake subtitle'):
@@ -68,44 +71,71 @@ def _create_zip_with_gbk_filename(zip_path, filename_gbk_bytes, content=b'fake s
         f.write(struct.pack('<4sHHHHIIH', b'PK\x05\x06', 0, 0, 1, 1, cd_size, cd_offset, 0))
 
 
-def test_extract_zip_cjk_filename():
+def test_unzip_recovers_cjk_filename():
     with tempfile.TemporaryDirectory() as tmpdir:
         zip_path = os.path.join(tmpdir, 'test.zip')
         gbk_name = '中文字幕.srt'.encode('gbk')
         _create_zip_with_gbk_filename(zip_path, gbk_name, b'1\n00:00:01,000 --> 00:00:02,000\nHello')
-        target, files = _extract_zip(zip_path)
-        assert files == ['中文字幕.srt']
-        assert os.path.exists(os.path.join(target, '中文字幕.srt'))
+        entries = dict(_unzip(zip_path))
+        assert list(entries) == ['中文字幕.srt']
+        assert os.path.exists(entries['中文字幕.srt'])
 
 
-def test_extract_zip_skips_non_subtitles():
+def test_unzip_lists_but_skips_non_subtitles():
     with tempfile.TemporaryDirectory() as tmpdir:
         zip_path = os.path.join(tmpdir, 'test.zip')
         with zipfile.ZipFile(zip_path, 'w') as zf:
             zf.writestr('readme.txt', 'not a subtitle')
-        target, files = _extract_zip(zip_path)
-        assert files == []
+        assert dict(_unzip(zip_path)) == {'readme.txt': None}
+        assert not os.path.exists(zip_path + '_extracted')
 
 
-def test_extract_zip_dedupes_flattened_basenames():
+def test_save_and_extract_uses_the_backend_listing():
     with tempfile.TemporaryDirectory() as tmpdir:
-        zip_path = os.path.join(tmpdir, 'test.zip')
-        with zipfile.ZipFile(zip_path, 'w') as zf:
+        listing = [('readme.txt', 'rar://p/readme.txt'), ('ep01.srt', 'rar://p/ep01.srt'),
+                   ('ep01.srt', 'rar://p/Subs/ep01.srt'), ('._ep01.srt', 'rar://p/__MACOSX/._ep01.srt'),
+                   ('\udcd6\udcd0.srt', 'rar://p/\udcd6\udcd0.srt')]  # undecodable bytes, as libarchive lists them
+        result = save_and_extract(tmpdir, 'pack.rar', b'Rar!', backend=lambda path: listing)
+        assert (result.files, result.paths) == (['ep01.srt'], ['rar://p/ep01.srt'])
+        result = save_and_extract(tmpdir, 'pack.rar', b'Rar!', backend=lambda path: 1 / 0)
+        assert (result.status, result.entries) == ('invalid', [])
+        assert save_and_extract(tmpdir, 'pack.rar', b'Rar!').status == 'invalid'
+
+
+def test_save_and_extract_reports_archive_contents():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as zf:
+            zf.writestr('share.doc', 'pan link')
+            zf.writestr('readme.txt', 'noise')
+        result = save_and_extract(tmpdir, 'pack.zip', buf.getvalue())
+        assert result.status == 'invalid' and result.entries == ['share.doc', 'readme.txt']
+        with zipfile.ZipFile(buf, 'a') as zf:
+            zf.writestr('Movie.srt', '1\n')
+        result = save_and_extract(tmpdir, 'pack.zip', buf.getvalue())
+        assert result.status == 'ok' and result.files == ['Movie.srt']
+
+
+def test_save_and_extract_keeps_the_first_of_duplicate_names():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as zf:
             zf.writestr('a/Movie.srt', 'first')
             zf.writestr('b/Movie.srt', 'second')
-        target, files = _extract_zip(zip_path)
-        assert files == ['Movie.srt']  # the second would overwrite the first
-        with open(os.path.join(target, 'Movie.srt')) as f:
+            zf.writestr('__MACOSX/._Movie.srt', 'resource fork')
+        result = save_and_extract(tmpdir, 'pack.zip', buf.getvalue())
+        assert result.files == ['Movie.srt']
+        with open(result.paths[0]) as f:
             assert f.read() == 'first'
 
 
-def test_extract_zip_keeps_vobsub_sidecar():
+def test_unzip_keeps_vobsub_sidecar():
     with tempfile.TemporaryDirectory() as tmpdir:
         zip_path = os.path.join(tmpdir, 'test.zip')
         with zipfile.ZipFile(zip_path, 'w') as zf:
             zf.writestr('pack.chs.sub', b'\x00\x00fake vobsub')
             zf.writestr('pack.chs.idx', b'VobSub index')
             zf.writestr('readme.txt', 'noise')
-        target, files = _extract_zip(zip_path)
-        assert files == ['pack.chs.sub']  # pickable subtitles only
-        assert os.path.exists(os.path.join(target, 'pack.chs.idx'))  # sidecar saved
+        entries = dict(_unzip(zip_path))
+        assert list(entries) == ['pack.chs.sub', 'pack.chs.idx', 'readme.txt']
+        assert os.path.exists(entries['pack.chs.idx']) and entries['readme.txt'] is None

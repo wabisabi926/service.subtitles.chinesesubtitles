@@ -18,7 +18,7 @@ from core.models import Subtitle, Tags, Work, WorkQuery, build_label, language_m
 
 def make_sub(langs=(), fmts=("srt",), sources=(), bilingual=False):
     return Subtitle("n", "l", Tags(lang=list(langs), fmt=list(fmts),
-                                    source=list(sources), bilingual=bilingual))
+                                    src=list(sources), bilingual=bilingual))
 
 
 ALL_TRUE = {
@@ -59,11 +59,11 @@ def test_parse_meta_year_bracket():
 
 
 def subhd_work(title, season="", year="", href="/d/1"):
-    return Work(title=title, season=season, year=year, anchors={"subhd": [href]})
+    return Work(title=title, season=season, year=year, anchors={"subhd": href})
 
 
 def zimuku_work(title, season="", year="", url="https://zimuku.org/subs/1.html"):
-    return Work(title=title, season=season, year=year, anchors={"zimuku": [url]})
+    return Work(title=title, season=season, year=year, anchors={"zimuku": url})
 
 
 def test_order_works_season_first_then_year():
@@ -84,8 +84,6 @@ def test_order_works_season_first_then_year():
 # ---- service orchestration ----
 
 class FakeProvider:
-    name = "fake"
-
     def __init__(self, log=None, backend=None):
         self.log = log
 
@@ -122,8 +120,7 @@ def patch_providers(monkeypatch, providers):
 def test_resolve_work_bridges_subhd_by_douban_id(monkeypatch):
     patch_providers(monkeypatch, {"zimuku": FakeProvider, "subhd": RaisingProvider})
     picked = service.resolve_work(WorkQuery(title="绝命毒师"), log=lambda msg: None)
-    assert picked.anchors == {"zimuku": ["https://zimuku.org/subs/1.html"],
-                              "subhd": ["/d/1393859"]}
+    assert picked.anchors == {"zimuku": "https://zimuku.org/subs/1.html", "subhd": "/d/1393859"}
 
 
 def test_resolve_work_survives_a_broken_bridge(monkeypatch):
@@ -162,7 +159,7 @@ def test_resolve_work_single_row_skips_picker(monkeypatch):
     calls = []
     patch_providers(monkeypatch, {"zimuku": FakeProvider, "subhd": FakeProvider})
     picked = service.resolve_work(WorkQuery(title="x"),
-                                  choose=lambda t, o: calls.append(o) or None,
+                                  choose=lambda o: calls.append(o) or None,
                                   log=lambda msg: None)
     assert picked is not None and not calls
 
@@ -194,7 +191,7 @@ def test_resolve_work_season_filters_rows(monkeypatch):
     patch_providers(monkeypatch, {"zimuku": Seasons, "subhd": FakeProvider})
     picked = service.resolve_work(
         WorkQuery(title="老友记 Friends", season="10", is_tv=True),
-        choose=lambda t, o: offered.append(o) or 0, log=lambda msg: None)
+        choose=lambda o: offered.append(o) or 0, log=lambda msg: None)
     # other seasons dropped, the season-less pack kept; exact season first
     assert len(offered[0]) == 2
     assert picked.season == "10"
@@ -211,11 +208,11 @@ def test_resolve_work_picker_paths(monkeypatch):
     # headless: first row wins
     assert service.resolve_work(query, log=lambda m: None).title == "A"
     # picker selects the second row
-    picked = service.resolve_work(query, choose=lambda t, o: 1, log=lambda m: None)
+    picked = service.resolve_work(query, choose=lambda o: 1, log=lambda m: None)
     assert picked.title == "B"
     # picker cancelled / out of range
-    assert service.resolve_work(query, choose=lambda t, o: None, log=lambda m: None) is None
-    assert service.resolve_work(query, choose=lambda t, o: 99, log=lambda m: None) is None
+    assert service.resolve_work(query, choose=lambda o: None, log=lambda m: None) is None
+    assert service.resolve_work(query, choose=lambda o: 99, log=lambda m: None) is None
 
 
 def test_resolve_work_nothing_found(monkeypatch):
@@ -244,12 +241,12 @@ def test_search_all_anchors_and_isolation(monkeypatch):
 
     # only sites whose anchor the work carries are searched
     patch_providers(monkeypatch, {"subhd": FakeProvider, "zimuku": RaisingProvider})
-    work = Work(title="绝命毒师 第二季", anchors={"subhd": ["/d/1"]})
+    work = Work(title="绝命毒师 第二季", anchors={"subhd": "/d/1"})
     subs = service.search_all(query, work, log=lambda msg: None)
-    assert len(subs) == 1 and subs[0].tags.provider == "subhd"
+    assert len(subs) == 1 and (subs[0].tags.provider, subs[0].tags.production) == ("subhd", "剧集")
 
     # a raising site degrades to nothing, the healthy one survives
-    work = Work(title="绝命毒师 第二季", anchors={"subhd": ["/d/1"], "zimuku": ["u"]})
+    work = Work(title="绝命毒师 第二季", anchors={"subhd": "/d/1", "zimuku": "u"})
     subs = service.search_all(query, work, log=lambda msg: None)
     assert len(subs) == 1 and subs[0].tags.provider == "subhd"
 
@@ -266,9 +263,17 @@ def test_download_dispatch(monkeypatch):
 # ---- models ----
 
 def test_build_label():
-    tags = Tags(lang=["chs", "eng"], fmt=["ass"], source=["official"],
+    tags = Tags(lang=["chs", "eng"], fmt=["ass"], src=["official"],
                 production="电影", fansub="YYeTs")
     assert build_label(tags, filename="name.ass") == "[电影][简英][官方][ASS][YYeTs] name.ass"
+
+
+def test_languages_in():
+    from core.models import languages_in
+    assert languages_in("简体中文字幕 English字幕 双语字幕") == ["chs", "eng"]
+    assert languages_in("Movie.cht&eng.srt") == ["cht", "eng"]
+    assert languages_in("简繁") == ["chs", "cht"]
+    assert languages_in("Movie.2010.srt") == []
 
 
 def test_build_label_collection():
@@ -306,6 +311,13 @@ def test_parse_filename_lowercase_marker():
     assert out["title"] == "show name" and out["season"] == "1" and out["episode"] == "2"
 
 
+def test_parse_filename_lone_episode_markers():
+    out = parse_filename("[LoreLoli] Cat's Eye - 03 [BDRip 1440x1080 x264 Hi10P FLAC].mkv")
+    assert out == {"title": "[LoreLoli] Cat's Eye", "year": "", "season": "", "episode": "3"}
+    assert parse_filename("someone.EP3.x264")["episode"] == "3"
+    assert parse_filename("Show.S00E05.Special")["season"] == ""  # specials carry no season
+
+
 def test_parse_filename_strips_release_tags_best_effort():
     out = parse_filename("Some.Show.2160p.HDTV.x265")
     assert out["title"] == "Some Show"
@@ -328,6 +340,9 @@ def test_parse_filename_no_markers():
 def test_filename_from_headers():
     assert filename_from_headers('attachment; filename="a.srt"') == "a.srt"
     assert filename_from_headers("attachment; filename*=UTF-8''%E4%B8%AD.srt") == "中.srt"
+    latin1 = 'attachment; filename="' + "猫眼.rar".encode("utf-8").decode("latin-1") + '"'
+    assert filename_from_headers(latin1) == "猫眼.rar"
+    assert filename_from_headers('attachment; filename="caf\xe9.srt"') == "caf\xe9.srt"
     assert filename_from_headers(None, url="http://x/y/sub.zip") == "sub.zip"
     assert filename_from_headers(None) is None
     assert filename_from_headers(None, url="http://x/", default="f.bin") == "f.bin"
@@ -359,7 +374,7 @@ def test_filter_language():
 def test_filter_source():
     subs = [make_sub(sources=["official"]), make_sub(sources=["machine"])]
     kept = apply_filters(subs, {**ALL_TRUE, "src_machine": False})
-    assert [s.tags.source for s in kept] == [["official"]]
+    assert [s.tags.src for s in kept] == [["official"]]
 
 
 def test_filter_format():
@@ -384,7 +399,7 @@ def test_filter_sorts_by_language_then_source():
         make_sub(langs=["eng"]),                                   # tier 4
     ]
     kept = apply_filters(subs, ALL_TRUE)
-    assert [(s.tags.lang, s.tags.source) for s in kept] == [
+    assert [(s.tags.lang, s.tags.src) for s in kept] == [
         (["chs"], ["official"]), (["chs"], ["ai"]), (["chs"], ["machine"]),
         (["cht"], []), (["eng"], []),
     ]
@@ -398,7 +413,32 @@ def test_episode_marker_variants():
     assert episode_marker("Show.S02.E05.720p") == (2, 5)  # dot-separated form
     assert episode_marker("第12集") == (None, 12)
     assert episode_marker("someone.EP3.x264") == (None, 3)
+    assert episode_marker("Show.S00E05.Special") == (0, 5)
+    assert episode_marker("某剧.第二季.第05集") == (2, 5)
     assert episode_marker("Movie.2010.1080p") == (None, None)
+    assert episode_marker("[LoreLoli] Cat's Eye - 03 [BDRip 1440x1080 x264 Hi10P FLAC]") == (None, 3)
+    assert episode_marker("[sam] Chainsaw Man - 03v2 [BD 1080p FLAC] [0E05A166]") == (None, 3)
+    assert episode_marker("[sam] Chainsaw Man - 03V2 [BD]") == (None, 3)
+    assert episode_marker("show.s02e05") == episode_marker("Show.Ep05.S02E05") == (2, 5)
+    assert episode_marker("Show.S02EP05") == (2, 5)
+    assert episode_marker("Neon Genesis Evangelion - 01 - 1080p Hi10p [462728C9]") == (None, 1)
+    assert episode_marker("[Group] Title - 12.chs.ass") == (None, 12)
+    for name in ("Movie.2010.DTS-HD.MA.5.1-Group", "Movie (2010) - 1080p",
+                 "Movie (2010) DTS - 5.1", "Movie - 2019 [1080p]"):
+        assert episode_marker(name) == (None, None), name
+
+
+def test_rename_map_fansub_pack_onto_dash_numbered_videos():
+    from core.autosave import fanout_names, playback_candidates, rename_map
+    subs = [f"[U2-Rip] キャッツ・アイ 第{n:02d}話「x」(BDrip 1440x1080 H264 FLAC).srt"
+            for n in (1, 2, 3)]
+    videos = [f"[LoreLoli] Cat's Eye - {n:02d} [BDRip 1440x1080 x264 Hi10P FLAC]"
+              for n in (1, 2, 3)] \
+        + ["[LoreLoli] Cat's Eye 2nd Season - 37 [BDRip 1440x1080 x264 Hi10P FLAC]"]
+    mapping = rename_map(subs, videos[2], videos)
+    assert mapping == dict(zip(subs, videos[:3]))
+    assert playback_candidates(mapping, videos[2]) == [subs[2]]
+    assert sorted(fanout_names(mapping, subs[2], video_stem=videos[2])) == subs[:2]
 
 
 def test_rename_map_single_subtitle():
@@ -444,6 +484,10 @@ def test_rename_map_season_disambiguation():
     mapping = rename_map(subs, "Show.S02E05.mkv", siblings, season=2)
     assert mapping["t.S01E05.ass"] == "Show.S01E05.mkv"
     assert mapping["t.S02E05.ass"] == "Show.S02E05.mkv"
+    # specials (season 0) stay distinct from the playing season
+    mapping = rename_map(["t.S00E05.ass", "t.S01E05.ass"], "Show.S01E05",
+                         ["Show.S00E05", "Show.S01E05"], season=1)
+    assert mapping == {"t.S00E05.ass": "Show.S00E05", "t.S01E05.ass": "Show.S01E05"}
 
 
 def test_rename_map_movie_twins():
@@ -529,14 +573,14 @@ def test_fanout_names_without_pick():
     assert sorted(fanout_names(mapping, "", video_stem="Show.S01E02")) == subs
 
 
-def test_is_bilingual_markers():
-    from core.autosave import is_bilingual
+def test_bilingual_markers():
+    from core.autosave import BILINGUAL_RE
     for name in ("X.chs&eng.ass", "X.cht+eng.ass", "X.chs.eng.srt", "X.eng&chs.srt",
                  "X.简英.srt", "X.繁英.ass", "X.中英双语.srt", "X.简体&英文.srt",
                  "X.简体中文&英文.srt", "X.中文&英文.srt"):
-        assert is_bilingual(name), name
+        assert BILINGUAL_RE.search(name), name
     for name in ("X.chs.ass", "X.eng.srt", "X.England.chs.srt", "X.简体.srt"):
-        assert not is_bilingual(name), name
+        assert not BILINGUAL_RE.search(name), name
 
 
 def test_lang_tag_composites():

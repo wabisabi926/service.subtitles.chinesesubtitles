@@ -15,6 +15,7 @@ if lib_dir not in sys.path:
 
 import xbmc
 import xbmcvfs
+from core.models import DownloadResult
 from kodi import plugin
 
 
@@ -66,10 +67,8 @@ class FakeAddon:
 def addon_with(**overrides):
     """Addon whose settings are all on, except the overrides
     (given as unprefixed keys like lang_eng=False)."""
-    ids = (["filter_bilingual"]
-           + [f"filter_src_{k}" for k in plugin.SOURCES]
-           + [f"filter_lang_{k}" for k in plugin.LANGS]
-           + [f"filter_fmt_{k}" for k in plugin.FORMATS])
+    ids = ["filter_bilingual"] + [f"filter_{g}_{k}" for g, vocab in plugin.FILTER_GROUPS.items()
+                                  for k in vocab]
     values = {i: "true" for i in ids}
     values["filter_bilingual"] = "false"  # bilingual-only stays off by default
     values.update({f"filter_{k}": "false" for k in overrides})
@@ -194,6 +193,52 @@ def test_fanout_folder_follows_storage_mode(monkeypatch):
     assert plugin.fanout_folder("/videos/Show") == "/videos/Show"
 
 
+def test_extract_archive_walks_nested_folders(monkeypatch):
+    root = "rar://%2Ftmp%2Fp.rar"
+    tree = {root: (["Fonts", "Subs"], ["readme.txt"]),
+            root + "/Fonts": ([], ["a.ttf"]),
+            root + "/Subs": ([], ["ep01.srt"])}
+    monkeypatch.setattr(xbmcvfs, "listdir", tree.__getitem__)
+    assert plugin.extract_archive("/tmp/p.rar") == [
+        ("readme.txt", root + "/readme.txt"), ("a.ttf", root + "/Fonts/a.ttf"),
+        ("ep01.srt", root + "/Subs/ep01.srt")]
+    monkeypatch.setattr(xbmcvfs, "listdir", lambda url: 1 / 0)
+    assert plugin.extract_archive("/tmp/p.7z") == []
+
+
+def test_clean_temp_wipes_and_clears_kodi_cache(monkeypatch, tmp_path):
+    temp = tmp_path / "temp"
+    (temp / "old_extracted").mkdir(parents=True)
+    (temp / "old.zip").write_bytes(b"x")
+    (temp / "old_extracted" / "a.srt").write_bytes(b"x")
+    deleted = []
+    monkeypatch.setattr(plugin, "__temp__", str(temp))
+    monkeypatch.setattr(xbmcvfs, "delete", lambda p: deleted.append(p) or os.remove(p))
+    plugin.clean_temp()
+    assert temp.is_dir() and list(temp.iterdir()) == []
+    assert deleted == [str(temp / ".cache")]
+
+
+def test_do_download_reports_the_most_specific_failure(monkeypatch, tmp_path):
+    shown = []
+
+    class Dialog:
+        def notification(self, heading, message, *args):
+            shown.append(message)
+
+    monkeypatch.setattr(plugin.xbmcgui, "Dialog", Dialog)
+    monkeypatch.setattr(plugin, "__temp__", str(tmp_path))
+    monkeypatch.setattr(xbmcvfs, "delete", os.remove)
+    monkeypatch.setattr(plugin, "__language__",
+                        {30902: "invalid", 30905: "failed", 30906: "no subtitle: %s"}.get)
+    for result in (DownloadResult(reason="SubHD: 下载频率过高"),
+                   DownloadResult("invalid", entries=["a.doc", "b.txt"]),
+                   DownloadResult("invalid"), DownloadResult()):
+        monkeypatch.setattr(plugin.service, "download", lambda *a, r=result, **k: r)
+        assert plugin.do_download("link", "subhd") == []
+    assert shown == ["SubHD: 下载频率过高", "no subtitle: a.doc, b.txt", "invalid", "failed"]
+
+
 def test_filter_settings_drop_the_filter_prefix(monkeypatch):
     monkeypatch.setattr(plugin, "__addon__", addon_with(lang_eng=False, src_machine=False))
     settings = plugin.filter_settings()
@@ -208,6 +253,6 @@ def test_filter_settings_drive_core_filter(monkeypatch):
     from core.models import Subtitle, Tags
 
     monkeypatch.setattr(plugin, "__addon__", addon_with(src_machine=False))
-    good = Subtitle("a.srt", "l1", Tags(lang=["chs"], fmt=["srt"], source=["official"]))
-    machine = Subtitle("b.srt", "l2", Tags(lang=["chs"], fmt=["srt"], source=["machine"]))
+    good = Subtitle("a.srt", "l1", Tags(lang=["chs"], fmt=["srt"], src=["official"]))
+    machine = Subtitle("b.srt", "l2", Tags(lang=["chs"], fmt=["srt"], src=["machine"]))
     assert apply_filters([good, machine], plugin.filter_settings()) == [good]

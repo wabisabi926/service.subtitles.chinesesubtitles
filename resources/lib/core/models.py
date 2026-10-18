@@ -21,7 +21,7 @@ class Work:
     season: str = ""         # parsed from the title; "" when it carries none
     year: str = ""           # parsed from the title's "(19|20)xx" bracket
     anchors: dict = field(default_factory=dict)
-    # site name -> that site's page URLs. Zimuku pages come from the work
+    # site name -> that site's page URL. Zimuku's comes from the work
     # search; the subhd entry is attached after the user picks a row, built
     # from the picked page's Douban id ("/d/1393859")
     preloaded: dict = field(default_factory=dict)
@@ -34,7 +34,7 @@ class Tags:
     """Parsed metadata of one subtitle entry."""
     lang: list = field(default_factory=list)    # chs / cht / eng
     fmt: list = field(default_factory=list)     # ass / srt / ssa / sub / sup / vtt
-    source: list = field(default_factory=list)  # official / reprint / original / ai / machine
+    src: list = field(default_factory=list)     # official / reprint / original / ai / machine
     bilingual: bool = False
     collection: bool = False
     fansub: str = ""
@@ -58,42 +58,39 @@ class DownloadResult:
     files: list = field(default_factory=list)
     display_names: list = field(default_factory=list)  # shortened names for pickers
     paths: list = field(default_factory=list)
+    entries: list = field(default_factory=list)  # what an archive held when 'invalid'
 
 
 # canonical vocabularies of the Tags fields; SOURCES is ordered best-first
-# (the filter ranks by that order, settings ids are filter_{group}_{key})
 LANGS = ("chs", "cht", "eng")
 FORMATS = ("ass", "srt", "ssa", "sub", "sup", "vtt")
 SOURCES = ("official", "reprint", "original", "ai", "machine")
+# the filterable Tags fields and their vocabularies; settings ids are filter_{field}_{key}
+FILTER_GROUPS = {"src": SOURCES, "lang": LANGS, "fmt": FORMATS}
 
 LANG_MARKS = {"chs": "简", "cht": "繁", "eng": "英"}
+# what marks each language in a site badge or a filename ("简体中文", "chs&eng", "简英")
+LANG_WORDS = {"chs": ("chs", "简", "sc"), "cht": ("cht", "繁", "tc"), "eng": ("eng", "英")}
+
+
+def languages_in(text):
+    """Tags whose markers appear in a badge text or filename, in LANGS order."""
+    low = text.lower()
+    return [code for code, words in LANG_WORDS.items() if any(w in low for w in words)]
 SOURCE_LABELS = {"official": "官方", "reprint": "精修", "original": "原创", "ai": "AI", "machine": "机翻"}
 FORMAT_LABELS = {fmt: fmt.upper() for fmt in FORMATS}
 
 
 def build_label(tags, filename=""):
     """Display label such as [电影][简英][官方][ASS][合集][YYeTs] name.srt."""
-    label = ""
-    if tags.production:
-        label += f"[{tags.production}]"
-    marks = "".join(LANG_MARKS[x] for x in LANGS if x in tags.lang)
-    if marks:
-        label += f"[{marks}]"
-    for key, text in SOURCE_LABELS.items():
-        if key in tags.source:
-            label += f"[{text}]"
-            break
-    for key, text in FORMAT_LABELS.items():
-        if key in tags.fmt:
-            label += f"[{text}]"
-            break
-    if tags.collection:
-        label += "[合集]"
-    if tags.fansub:
-        label += f"[{tags.fansub}]"
-    if filename:
-        label += f" {filename}"
-    return label
+    parts = (tags.production,
+             "".join(LANG_MARKS[x] for x in LANGS if x in tags.lang),
+             next((text for key, text in SOURCE_LABELS.items() if key in tags.src), ""),
+             next((text for key, text in FORMAT_LABELS.items() if key in tags.fmt), ""),
+             "合集" if tags.collection else "",
+             tags.fansub)
+    label = "".join(f"[{p}]" for p in parts if p)
+    return f"{label} {filename}" if filename else label
 
 
 def language_meta(tags):

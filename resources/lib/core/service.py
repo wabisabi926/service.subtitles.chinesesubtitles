@@ -65,7 +65,7 @@ def resolve_work(query, choose=None, log=noop_log):
     sites by id instead of fuzzy title matching — and the page's subtitle
     list, preloaded for search_all. Returns None when nothing is found or
     the picker is cancelled. A single row skips the picker;
-    `choose(title, options)` otherwise decides (headless default: first).
+    `choose(options)` otherwise decides (headless default: first).
     """
     zimuku = PROVIDERS["zimuku"](log=log)
     rows = _zimuku_rows(zimuku, query, log)
@@ -74,7 +74,7 @@ def resolve_work(query, choose=None, log=noop_log):
     if len(rows) == 1:
         work = rows[0]
     else:
-        index = choose("Select Work", [w.title for w in rows]) if choose else 0
+        index = choose([w.title for w in rows]) if choose else 0
         if index is None or not 0 <= index < len(rows):
             return None
         work = rows[index]
@@ -88,7 +88,7 @@ def _bridge(zimuku, query, work, log):
     fetch SubHD. A page without an id (or an unreachable one) leaves the
     work Zimuku-only; search_all then degrades to the single site.
     """
-    url = (work.anchors.get("zimuku") or [""])[0]
+    url = work.anchors.get("zimuku")
     if not url:
         return
     try:
@@ -97,16 +97,16 @@ def _bridge(zimuku, query, work, log):
         log(f"zimuku: work page fetch failed: {e}")
         return
     if douban:
-        work.anchors["subhd"] = [f"/d/{douban}"]
+        work.anchors["subhd"] = f"/d/{douban}"
     work.preloaded["zimuku"] = subs
 
 
 def search_all(query, work, log=noop_log):
     """Collect the subtitles of every anchored site; tags.provider marks
-    each result's origin. Results preloaded during resolution pass through
-    as-is (normally only SubHD is fetched here); site failures degrade to
-    empty lists."""
-    subtitles = []
+    each result's origin and tags.production the kind of work. Results
+    preloaded during resolution pass through as-is (normally only SubHD is
+    fetched here); site failures degrade to empty lists."""
+    subtitles, production = [], "剧集" if query.is_tv else "电影"
     for name, cls in PROVIDERS.items():
         found = work.preloaded.get(name) if work else None
         if found is None and work and name in work.anchors:
@@ -116,7 +116,7 @@ def search_all(query, work, log=noop_log):
                 log(f"{name}: search failed: {e}")
                 found = []
         for s in found or ():
-            s.tags.provider = name
+            s.tags.provider, s.tags.production = name, production
             subtitles.append(s)
     return subtitles
 

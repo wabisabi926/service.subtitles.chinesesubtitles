@@ -28,6 +28,41 @@ def test_zimuku_work_page_skips_linkless_rows(monkeypatch):
     assert [s.filename for s in subs] == ["Show.S01E01.srt"]
 
 
+def test_zimuku_work_page_parses_row_tags(monkeypatch):
+    html = """
+    <a href="https://movie.douban.com/subject/1393859/">douban</a>
+    <div class="subs box clearfix"><table><tbody>
+      <tr><td><a href="/detail/1.html">Show.S01E01.chs&eng.ass</a> <a href="/t/yyets">YYeTs</a></td>
+          <td class="tac lang"><img title="简体中文字幕"><img title="English字幕"><img title="双语字幕"></td>
+          <td><span class="label label-info">ASS/SRT</span></td></tr>
+      <tr><td><a href="/detail/2.html">Show.S01.Complete.rar</a> <span class="label-danger">热门</span></td>
+          <td class="tac lang"><img title="繁體中文字幕"></td></tr>
+      <tr><td><a href="/detail/3.html">Show.S01E02.srt</a></td></tr>
+    </tbody></table></div>
+    """
+    provider = ZimukuProvider()
+    monkeypatch.setattr(provider, "_get", lambda url, referer=None: html.encode())
+    query = WorkQuery(title="x", season="1", episode="1", is_tv=True)
+    douban, subs = provider.work_page(query, "https://zimuku.org/subs/1.html")
+    assert douban == "1393859"
+    pack, episode = subs  # rows come newest-last on the site, so reversed
+    assert (episode.filename, episode.link) == ("Show.S01E01.chs&eng.ass", "https://zimuku.org/detail/1.html")
+    assert (episode.tags.lang, episode.tags.bilingual, episode.tags.fmt) == (["chs", "eng"], True, ["ass", "srt"])
+    assert (episode.tags.fansub, episode.tags.collection) == ("YYeTs", False)
+    assert (pack.tags.lang, pack.tags.fmt, pack.tags.fansub, pack.tags.collection) == (["cht"], [], "热门", True)
+
+
+def test_zimuku_episode_filter_tolerates_padding():
+    f = ZimukuProvider._episode_filter("1", "3")
+    for name in ("Show.S01E03.srt", "S1E03.srt", "Show.S01EP03.srt", "Show.E003.srt",
+                 "猫眼三姐妹 第3集.srt", "猫眼三姐妹 第03集.srt", "猫眼三姐妹 第 3 集.srt"):
+        assert f(name) == (True, False), name
+    for name in ("Show.S01E13.srt", "Show.S02E03.srt", "Show.E30.srt", "第13集.srt", "第30集.srt"):
+        assert f(name) == (False, False), name
+    assert f("Show.S01.Complete.rar") == (True, True)  # untagged pack entry
+    assert ZimukuProvider._episode_filter("1", "")("Show.E13.srt") == (True, False)
+
+
 def test_zimuku_find_works():
     provider = ZimukuProvider(log=lambda msg: print(f"  [zimuku] {msg}"))
 
@@ -39,7 +74,7 @@ def test_zimuku_find_works():
         f"Missing seasons, got {sorted(seasons)} among {len(works)} works"
     print(f"Total works: {len(works)}, seasons found: {sorted(seasons)}")
     for i, w in enumerate(works[:5], start=1):
-        print(f"{i}. {w.title} | season={w.season!r} year={w.year!r} | {w.anchors['zimuku'][0]}")
+        print(f"{i}. {w.title} | season={w.season!r} year={w.year!r} | {w.anchors['zimuku']}")
 
 
 def test_zimuku_work_page():
@@ -49,7 +84,7 @@ def test_zimuku_work_page():
     works = provider.find_works(WorkQuery(title="老友记 Friends"))
     s1 = next(w for w in works if w.season == "1")
     query = WorkQuery(title="老友记 Friends", season="1", is_tv=True)
-    douban, subs = provider.work_page(query, s1.anchors["zimuku"][0])
+    douban, subs = provider.work_page(query, s1.anchors["zimuku"])
     print(f"work: {s1.title} | douban id: {douban} | subtitles: {len(subs)}")
     assert douban == "1393859", f"unexpected douban id: {douban}"
     assert subs, "work page yielded no subtitles"

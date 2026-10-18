@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup
 
 from .archive import save_and_extract
 from .http import filename_from_headers, make_session, noop_log
-from .models import FORMATS, DownloadResult, Subtitle, Tags
+from .matcher import episode_marker
+from .models import FORMATS, DownloadResult, Subtitle, Tags, languages_in
 
 # Chinese origin badge -> normalized source tag
 SOURCE_MAP = {"转载精修": "reprint", "官方字幕": "official", "原创翻译": "original",
@@ -15,7 +16,6 @@ SOURCE_MAP = {"转载精修": "reprint", "官方字幕": "official", "原创翻�
 
 
 class SubhdProvider:
-    name = "subhd"
     BASE_URL = "https://subhd.tv"
 
     def __init__(self, log=noop_log, backend=None):
@@ -36,18 +36,14 @@ class SubhdProvider:
     # ---- search ----
 
     def search(self, query, work):
-        """List subtitles for every /d/{douban id} page the work anchors."""
-        results = []
-        episode = query.episode if query.is_tv else None
-        for href in (work.anchors.get("subhd") or []) if work else []:
-            content = self._get(urllib.parse.urljoin(self.BASE_URL, href))
-            if not content:
-                continue
-            results += self._parse_list(content, episode)
-        production = "剧集" if query.is_tv else "电影"
-        for r in results:
-            r.tags.production = production
-        return results
+        """List the subtitles of the work's /d/{douban id} page."""
+        href = work.anchors.get("subhd")
+        if not href:
+            return []
+        content = self._get(urllib.parse.urljoin(self.BASE_URL, href))
+        if not content:
+            return []
+        return self._parse_list(content, query.episode if query.is_tv else None)
 
     def _parse_list(self, content, target_episode=None):
         """Parse the work page; bg-light headers split movie/collection/episode rows."""
@@ -55,30 +51,18 @@ class SubhdProvider:
         container = soup.select_one("div.bg-white.shadow-sm.rounded-3.mb-5")
         if not container:
             return []
-        results, category = [], "general"
+        results, category = [], None
         for child in container.children:
             if child.name != "div":
                 continue
             classes = child.get("class", [])
             if "bg-light" in classes:
-                text = child.get_text().strip()
-                if "合集" in text:
-                    category = "collection"
-                elif "第" in text and "集" in text:
-                    match = re.search(r"第\s*(\d+)\s*集", text)
-                    category = int(match.group(1)) if match else "general"
-                else:
-                    category = "general"
+                text = child.get_text()
+                category = "collection" if "合集" in text else episode_marker(text)[1]
             elif "row" in classes:
-                if target_episode:
-                    if str(category) == str(target_episode):
-                        is_collection = False
-                    elif category == "collection":
-                        is_collection = True
-                    else:
-                        continue
-                else:
-                    is_collection = category == "collection"
+                is_collection = category == "collection"
+                if target_episode and not is_collection and category != int(target_episode):
+                    continue
                 link = child.select_one("a.link-dark")
                 if not link or not link.get("href", "").startswith("/a/"):
                     continue
@@ -97,13 +81,11 @@ class SubhdProvider:
             if "rounded" in classes and "text-white" in classes:
                 for cn, key in SOURCE_MAP.items():
                     if cn in text:
-                        tags.source.append(key)
+                        tags.src.append(key)
                         break
             if "fw-bold" in classes:
-                if "简体" in text: tags.lang.append("chs")
-                if "繁体" in text: tags.lang.append("cht")
-                if "英语" in text: tags.lang.append("eng")
-                if "双语" in text: tags.bilingual = True
+                tags.lang += languages_in(text)
+                tags.bilingual |= "双语" in text
             if "text-secondary" in classes:
                 for fmt in FORMATS:
                     if fmt.upper() in text.upper():

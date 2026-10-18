@@ -9,8 +9,8 @@ from bs4 import BeautifulSoup
 
 from .archive import ARCHIVE_EXTS, SUBTITLE_EXTS, save_and_extract
 from .http import filename_from_headers, make_session, noop_log
-from .matcher import parse_meta
-from .models import DownloadResult, Subtitle, Tags, Work
+from .matcher import episode_marker, parse_meta
+from .models import DownloadResult, Subtitle, Tags, Work, languages_in
 
 MAX_CAPTCHA_RETRIES = 3
 FILE_MIN_SIZE = 1024  # smaller responses are error pages, not subtitles
@@ -63,7 +63,8 @@ class ZimukuSolver:
                 1 if self._is_foreground(char_x + px - one_offset, py) else 0
                 for px, py in self.SAMPLE_POINTS
             ]
-            digit = self._match_digit(features)
+            digit = min(self.TEMPLATES,
+                        key=lambda d: sum(f != t for f, t in zip(features, self.TEMPLATES[d])))
             if digit == '1':
                 one_offset += 1
             elif digit == '4':
@@ -77,19 +78,8 @@ class ZimukuSolver:
         b, g, r = self._data[offset], self._data[offset + 1], self._data[offset + 2]
         return (r + g + b) / 3 < threshold
 
-    def _match_digit(self, features):
-        best, min_diff = '?', float('inf')
-        for digit, template in self.TEMPLATES.items():
-            diff = sum(f != t for f, t in zip(features, template))
-            if diff < min_diff:
-                min_diff, best = diff, digit
-            if min_diff == 0:
-                break
-        return best
-
 
 class ZimukuProvider:
-    name = "zimuku"
     BASE_URL = "https://zimuku.org"
 
     def __init__(self, log=noop_log, backend=None):
@@ -176,17 +166,15 @@ class ZimukuProvider:
                     continue
                 season, year = parse_meta(title)
                 works.append(Work(title=title, season=season, year=year,
-                                  anchors={"zimuku": [subs_url]}))
+                                  anchors={"zimuku": subs_url}))
         return works
 
     # ---- search ----
 
     def search(self, query, work):
-        """List subtitles for every /subs/{id}.html page the work anchors."""
-        results = []
-        for subs_url in (work.anchors.get("zimuku") or []) if work else []:
-            results += self.work_page(query, subs_url)[1]
-        return results
+        """List the subtitles of the work's /subs/{id}.html page."""
+        url = work.anchors.get("zimuku")
+        return self.work_page(query, url)[1] if url else []
 
     def work_page(self, query, subs_url):
         """One GET of a work page -> (douban id, episode-filtered subtitles).
@@ -203,54 +191,37 @@ class ZimukuProvider:
         subs = []
         box = BeautifulSoup(data, "html.parser").select_one("div.subs.box.clearfix")
         if box and box.tbody:
-            production = "剧集" if query.is_tv else "电影"
             matches_episode = self._episode_filter(query.season, query.episode)
             for row in reversed(box.tbody.find_all("tr")):
                 if not row.a:  # a linkless row must not sink the whole page
                     continue
                 include, collection = matches_episode(row.a.text)
                 if include:
-                    subs.append(self._parse_row(row, production, collection))
+                    subs.append(self._parse_row(row, collection))
         return douban, subs
 
-    def _parse_row(self, row, production, collection):
-        link = urllib.parse.urljoin(self.BASE_URL, row.a["href"])
-        langs = []
+    def _parse_row(self, row, collection):
         td = row.find("td", class_="tac lang")
-        if td:
-            langs = [img.get("title", "").rstrip("字幕") for img in td.find_all("img")]
-        tags = Tags(production=production, collection=collection)
-        fmt_span = row.find("span", class_="label-info")
-        if fmt_span:
-            tags.fmt = [f.strip() for f in fmt_span.text.strip().lower().split("/")]
-        fansub_link = row.select_one('a[href^="/t/"]')
-        if fansub_link:
-            tags.fansub = fansub_link.text.strip()
-        else:
-            danger = row.find("span", class_="label-danger")
-            if danger:
-                tags.fansub = danger.text.strip()
-        if "简体中文" in langs: tags.lang.append("chs")
-        if "繁體中文" in langs: tags.lang.append("cht")
-        if "English" in langs: tags.lang.append("eng")
-        if "双语" in langs: tags.bilingual = True
-        return Subtitle(row.a.text, link, tags)
+        langs = " ".join(img.get("title", "") for img in td.find_all("img")) if td else ""
+        fmt = row.find("span", class_="label-info")
+        fansub = row.select_one('a[href^="/t/"]') or row.find("span", class_="label-danger")
+        tags = Tags(lang=languages_in(langs),
+                    fmt=[f.strip() for f in fmt.text.lower().split("/")] if fmt else [],
+                    bilingual="双语" in langs, collection=collection,
+                    fansub=fansub.text.strip() if fansub else "")
+        return Subtitle(row.a.text, urllib.parse.urljoin(self.BASE_URL, row.a["href"]), tags)
 
     @staticmethod
     def _episode_filter(season, episode):
-        """Return fn(name) -> (include, collection) matching the wanted episode."""
-        if not (season and episode and str(season).isdigit() and str(episode).isdigit()):
+        """Return fn(name) -> (include, collection) matching the wanted episode;
+        a row without any episode marker is a season pack and always passes."""
+        if not (str(season).isdigit() and str(episode).isdigit()):
             return lambda name: (True, False)
-        ep = int(episode)
-        tokens = [f"S{int(season):02d}E{ep:02d}", f"E{ep:02d}", f"EP{ep:02d}",
-                  f"E{ep}", f"EP{ep}", f"第{ep}集"]
-        tag_re = re.compile(r'(S\d{1,2}\s*(E|EP)\d{1,3})|(\bEP?\d{1,3}\b)|(第\s*\d+\s*集)')
-        ep_re = re.compile(rf'(?<!\d)({"|".join(re.escape(t) for t in tokens)})(?!\d)', re.IGNORECASE)
+        want = int(season), int(episode)
 
         def matches(name):
-            upper = name.upper()
-            has_tag = tag_re.search(upper) is not None
-            return (not has_tag or bool(ep_re.search(upper)), not has_tag)
+            s, e = episode_marker(name)
+            return (e is None or (e == want[1] and s in (None, want[0])), e is None)
         return matches
 
     # ---- download ----

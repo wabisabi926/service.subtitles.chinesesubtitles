@@ -41,6 +41,22 @@ msgctxt "#30902"
 msgid "Invalid subtitle file, please choose another"
 msgstr ""
 
+msgctxt "#30903"
+msgid "Select Work"
+msgstr ""
+
+msgctxt "#30904"
+msgid "Choose Subtitle"
+msgstr ""
+
+msgctxt "#30905"
+msgid "Download failed"
+msgstr ""
+
+msgctxt "#30906"
+msgid "No subtitle in the archive: %s"
+msgstr ""
+
 msgctxt "#30260"
 msgid "Only show bilingual subtitles"
 msgstr ""

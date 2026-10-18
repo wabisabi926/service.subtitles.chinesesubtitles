@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 """Filter and rank subtitles according to user settings."""
 from .http import noop_log
-from .models import FORMATS, LANGS, SOURCES
-
-_SOURCE_RANK = {s: i for i, s in enumerate(SOURCES)}  # SOURCES order is best-first
+from .models import FILTER_GROUPS, SOURCES
 
 
 def sort_key(subtitle):
@@ -20,35 +18,29 @@ def sort_key(subtitle):
         lang_tier = 3
     else:
         lang_tier = 4
-    src_tier = min((_SOURCE_RANK.get(s, 5) for s in tags.source), default=5)
+    src_tier = min((SOURCES.index(s) for s in tags.src if s in SOURCES), default=len(SOURCES))
     return (lang_tier, src_tier)
 
 
 def apply_filters(subtitles, settings, log=noop_log):
     """Drop subtitles disallowed by settings, then sort by preference.
 
-    A missing tag list always passes its own filter (unknown source/format/lang
-    is never hidden); 'bilingual' is the only hard filter.
+    A subtitle passes a group (source, language, format) when it carries no
+    tag of that group, when the whole group is switched off, or when one of
+    its tags is enabled; 'bilingual' is the only hard filter.
     """
-    if not subtitles:
-        return []
-    allowed_src = [k for k in SOURCES if settings.get(f"src_{k}")]
-    allowed_lang = [k for k in LANGS if settings.get(f"lang_{k}")]
-    allowed_fmt = [k for k in FORMATS if settings.get(f"fmt_{k}")]
+    enabled = {group: {k for k in vocab if settings.get(f"{group}_{k}")}
+               for group, vocab in FILTER_GROUPS.items()}
 
-    kept = []
-    for s in subtitles:
-        t = s.tags
-        if settings.get("bilingual") and not t.bilingual:
-            continue
-        if allowed_src and t.source and not any(x in allowed_src for x in t.source):
-            continue
-        if allowed_lang and t.lang and not any(x in allowed_lang for x in t.lang):
-            continue
-        if allowed_fmt and t.fmt and not any(x in allowed_fmt for x in t.fmt):
-            continue
-        kept.append(s)
+    def passes(tags):
+        if settings.get("bilingual") and not tags.bilingual:
+            return False
+        for group, want in enabled.items():
+            have = getattr(tags, group)
+            if want and have and want.isdisjoint(have):
+                return False
+        return True
 
+    kept = sorted((s for s in subtitles if passes(s.tags)), key=sort_key)
     log(f"filtered {len(kept)}/{len(subtitles)} subtitles")
-    kept.sort(key=sort_key)
     return kept

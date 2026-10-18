@@ -2,6 +2,7 @@
 """Kodi plugin layer: adapts the xbmc runtime to the pure core library."""
 import json
 import os
+import shutil
 import sys
 import urllib.parse
 
@@ -16,12 +17,12 @@ if _LIB_DIR not in sys.path:
     sys.path.insert(0, _LIB_DIR)
 
 from core import service
-from core.archive import SUBTITLE_EXTS, shorten_names
+from core.archive import shorten_names
 from core.autosave import fanout_names, playback_candidates, rename_map
 from core.filter import apply_filters
 from core.matcher import (FOLDER_SEASON_RE, VIDEO_EXTS, episode_marker, parse_filename,
                           season_number)
-from core.models import FORMATS, LANGS, SOURCES, WorkQuery, build_label, language_meta
+from core.models import FILTER_GROUPS, LANGS, WorkQuery, build_label, language_meta
 
 __addon__ = xbmcaddon.Addon()
 __scriptid__ = __addon__.getAddonInfo("id")
@@ -39,60 +40,48 @@ def log(message, level=xbmc.LOGINFO):
 # ---- host adapters: what core expects from its runtime ----
 
 def choose(title, options):
-    """Dialog picker for core flows; returns None when the user cancels."""
+    """Dialog picker; None when the user cancels."""
     sel = xbmcgui.Dialog().select(title, options)
     return None if sel < 0 else sel
 
 
 def extract_archive(path):
-    """rar/7z (+ other Kodi-supported archives) via vfs add-ons; zip stays in core."""
-    ext = path.split(".")[-1].lower()
-    protocol = "rar" if ext == "rar" else "archive"
-    url = f"{protocol}://{urllib.parse.quote_plus(path)}"
-    try:
+    """(name, url) of every entry of a rar/7z/... archive, folders walked,
+    read through Kodi's vfs add-ons; zip stays in core."""
+    protocol = "rar" if path.lower().endswith(".rar") else "archive"
+
+    def walk(url):
         dirs, files = xbmcvfs.listdir(url)
+        yield from ((f, f"{url}/{f}") for f in files)
+        for d in dirs:
+            yield from walk(f"{url}/{d}")
+
+    try:
+        return list(walk(f"{protocol}://{urllib.parse.quote_plus(path)}"))
     except Exception as e:
-        log(f"vfs extract failed for {path}: {e}", xbmc.LOGWARNING)
-        return "", []
-    if "__MACOSX" in dirs:
-        dirs.remove("__MACOSX")
-    target = url
-    if not any(f.lower().endswith(SUBTITLE_EXTS) for f in files) and dirs:
-        target = url + "/" + dirs[0]
-        dirs, files = xbmcvfs.listdir(target)
-    return target, [f for f in files if f.lower().endswith(SUBTITLE_EXTS)]
+        log(f"vfs listing failed for {path}: {e}", xbmc.LOGWARNING)
+        return []
 
 
 def clean_temp():
-    """Wipe the addon temp dir so every download starts fresh."""
-    temp = __temp__.replace("\\", "/").rstrip("/")
-    if not xbmcvfs.exists(temp):
-        xbmcvfs.mkdirs(temp)
-        return
+    """Wipe the addon temp dir so every download starts fresh.
 
-    def wipe(path):
-        try:
-            dirs, files = xbmcvfs.listdir(path)
-        except Exception as e:
-            log(f"list {path} failed: {e}", xbmc.LOGWARNING)
-            return
-        for name in files:
-            if not xbmcvfs.delete(f"{path}/{name}"):
-                log(f"delete {path}/{name} failed", xbmc.LOGWARNING)
-        for name in dirs:
-            wipe(f"{path}/{name}")
-            xbmcvfs.rmdir(f"{path}/{name}")
-
-    wipe(temp)
+    Never list the folder through xbmcvfs: Kodi caches the listing and
+    then refuses to open any file Python writes there afterwards
+    (CFile::Open fails when the cached listing lacks the file). Deleting
+    one file through xbmcvfs drops that cache entry, hence the marker.
+    """
+    shutil.rmtree(__temp__, ignore_errors=True)
+    os.makedirs(__temp__, exist_ok=True)
+    marker = os.path.join(__temp__, ".cache")
+    open(marker, "wb").close()
+    xbmcvfs.delete(marker)
 
 
 def filter_settings():
     """Read addon settings into the plain dict core's filter expects
     (dropping the settings ids' filter_ prefix)."""
-    keys = (["bilingual"]
-            + [f"src_{k}" for k in SOURCES]
-            + [f"lang_{k}" for k in LANGS]
-            + [f"fmt_{k}" for k in FORMATS])
+    keys = ["bilingual"] + [f"{g}_{k}" for g, vocab in FILTER_GROUPS.items() for k in vocab]
     return {k: __addon__.getSetting("filter_" + k) == "true" for k in keys}
 
 
@@ -206,7 +195,8 @@ def current_query():
 
 def do_search(query):
     log(f"search query: {query}")
-    work = service.resolve_work(query, choose=choose, log=log)
+    work = service.resolve_work(query, log=log,
+                                choose=lambda options: choose(__language__(30903), options))
     if not work:
         return
 
@@ -292,7 +282,7 @@ def autosave(result):
         # fans out to the other episodes below
         display = (shorten_names(candidates)
                    if __addon__.getSetting("cutsubfn") == "true" else candidates)
-        sel = choose("Choose Subtitle", display)
+        sel = choose(__language__(30904), display)
         if sel is not None:
             picked = candidates[sel]
 
@@ -330,13 +320,12 @@ def do_download(link, provider):
     clean_temp()
     log(f"download {provider}: {link}")
     result = service.download(link, provider, __temp__, log=log, backend=extract_archive)
-    if result.status == "invalid":
+    if result.status != "ok":
+        text = (result.reason
+                or result.entries and __language__(30906) % ", ".join(result.entries)
+                or __language__(30902 if result.status == "invalid" else 30905))
         icon = os.path.join(__cwd__, "resources", "icon.png")
-        xbmcgui.Dialog().notification(__scriptname__, __language__(30902), icon, 4000)
-    if result.reason:
-        icon = os.path.join(__cwd__, "resources", "icon.png")
-        xbmcgui.Dialog().notification(__scriptname__, result.reason, icon, 4000)
-    if not result.files:
+        xbmcgui.Dialog().notification(__scriptname__, text, icon, 4000)
         return []
     picked = autosave(result)
     if picked:
@@ -345,7 +334,7 @@ def do_download(link, provider):
         return [result.paths[0]]
     # nothing maps to the playing video: let the user pick
     display = result.display_names if __addon__.getSetting("cutsubfn") == "true" else result.files
-    sel = choose("Choose Subtitle", display)
+    sel = choose(__language__(30904), display)
     if sel is None:
         # cancel falls back to the first entry, mirroring autosave's
         # cancel-keeps-best: Kodi already committed to loading a subtitle
@@ -357,11 +346,8 @@ def do_download(link, provider):
 # ---- entry ----
 
 def run():
-    params = {}
-    if len(sys.argv) >= 3 and len(sys.argv[2]) >= 2:
-        for key, values in urllib.parse.parse_qs(
-                sys.argv[2].lstrip("?"), keep_blank_values=True).items():
-            params[key] = values[0]
+    query = sys.argv[2].lstrip("?") if len(sys.argv) > 2 else ""
+    params = {k: v[0] for k, v in urllib.parse.parse_qs(query, keep_blank_values=True).items()}
     log(f"handle params: {params}")
 
     if __addon__.getSetting("proxy_follow_kodi") != "true":
