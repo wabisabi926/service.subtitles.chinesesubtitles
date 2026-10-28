@@ -13,43 +13,39 @@ PROVIDERS = {"subhd": SubhdProvider, "zimuku": ZimukuProvider}
 
 
 def order_works(rows, query=None):
-    """Season match first, then closeness to the query year."""
-    season = str((query.season or "") if query else "").strip()
+    """Closest to the query year first; rows without a year go last."""
     year = str((query.year or "") if query else "").strip()
-    try:
-        target = int(year) if year else None
-    except ValueError:
-        target = None
-
+    target = int(year) if year.isdigit() else None
     # provider years come from a (19|20)xx regex, so int() always holds
-    rows.sort(key=lambda w: (
-        0 if (season and str(w.season or "") == season) else 1,
-        abs(int(w.year) - target) if (target is not None and w.year) else 9999,
-    ))
+    rows.sort(key=lambda w: abs(int(w.year) - target) if (target is not None and w.year) else 9999)
     return rows
 
 
 def _zimuku_rows(zimuku, query, log):
-    """Search Zimuku for works, walking a query ladder until rows appear.
+    """Search Zimuku for works, walking a query ladder until rows survive.
 
     Measured: the bilingual combined title leaves few junk rows ("Friends"
     alone: 100 works; "老友记 Friends": 11) and a year suffix pins remakes
-    ("悲惨世界 Les Misérables 2012": exactly the 2012 film). A known season
-    never goes into the query ("老友记 第10季" once matched 第一季) — the rows
-    are filtered down to that season plus season-less pack entries instead.
+    ("悲惨世界 Les Misérables 2012": exactly the 2012 film).
+
+    The season filters rows and never enters the query ("老友记 第10季" once
+    matched 第一季); a row without a marker is a first season, the site's
+    convention. The year is only a hint: the site dates each season by its
+    own air year, so a rung that finds the wrong season filters to nothing
+    and the ladder moves on.
     """
     attempts = ([f"{query.title} {query.year}"] if query.year else []) \
         + [query.title] + [t for t in query.alt_titles if t]
     for i, title in enumerate(dict.fromkeys(attempts)):
         if i:
-            log(f"no works for '{query.title}', retrying with '{title}'")
+            log(f"zimuku: retrying with '{title}'")
         try:
             rows = list(zimuku.find_works(replace(query, title=title)) or [])
         except Exception as e:
             log(f"zimuku: find_works failed: {e}")
             rows = []
         if query.season:
-            rows = [w for w in rows if w.season in ("", query.season)]
+            rows = [w for w in rows if (w.season or "1") == query.season]
         if rows:
             return order_works(rows, query)
     return []
