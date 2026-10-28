@@ -2,6 +2,7 @@
 """Offline unit tests for core: matcher, models, filter, service orchestration, http helpers."""
 import os
 import sys
+from dataclasses import replace
 
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 lib_dir = os.path.join(base_dir, "resources", "lib")
@@ -66,19 +67,19 @@ def zimuku_work(title, season="", year="", url="https://zimuku.org/subs/1.html")
     return Work(title=title, season=season, year=year, anchors={"zimuku": url})
 
 
-def test_order_works_season_first_then_year():
-    query = WorkQuery(title="绝命毒师", season="5", year="2012")
+def test_order_works_by_year_closeness():
+    query = WorkQuery(title="悲惨世界", year="2012")
     rows = [
-        zimuku_work("绝命毒师 第一季 Breaking Bad", season="1", year="2008", url="u1"),
-        subhd_work("绝命毒师 第五季 Breaking Bad", season="5", href="/d/5"),
-        subhd_work("绝命毒师 第二季 Breaking Bad", season="2", href="/d/2"),
-        zimuku_work("绝命毒师 第五季 Breaking Bad", season="5", year="2012", url="u5"),
+        zimuku_work("悲惨世界 Les Misérables (1998)", year="1998", url="u1"),
+        zimuku_work("悲惨世界 Les Misérables", url="u0"),
+        zimuku_work("悲惨世界 Les Misérables (2012)", year="2012", url="u2"),
+        zimuku_work("悲惨世界 Les Misérables (2019)", year="2019", url="u3"),
     ]
     ordered = service.order_works(rows, query)
-    assert ordered[0].season == "5" and ordered[1].season == "5"
-    assert ordered[0].year == "2012"  # among season hits, closest year first
-    # past the season hits, year closeness ranks before site order
-    assert [r.season for r in ordered[2:]] == ["1", "2"]
+    assert [r.year for r in ordered] == ["2012", "2019", "1998", ""]
+    # no query year: the site order stands
+    assert [r.year for r in service.order_works(list(rows), WorkQuery(title="x"))] == \
+        [r.year for r in rows]
 
 
 # ---- service orchestration ----
@@ -185,16 +186,47 @@ def test_resolve_work_season_filters_rows(monkeypatch):
         def find_works(self, query):
             return [zimuku_work("老友记 第一季 Friends", season="1", year="1994"),
                     zimuku_work("老友记 第十季 Friends", season="10", year="2003"),
-                    zimuku_work("老友记 Friends 合集", season="")]
+                    zimuku_work("老友记重聚特辑 Friends Reunion Special (2021)", year="2021")]
 
     offered = []
     patch_providers(monkeypatch, {"zimuku": Seasons, "subhd": FakeProvider})
     picked = service.resolve_work(
         WorkQuery(title="老友记 Friends", season="10", is_tv=True),
         choose=lambda o: offered.append(o) or 0, log=lambda msg: None)
-    # other seasons dropped, the season-less pack kept; exact season first
-    assert len(offered[0]) == 2
-    assert picked.season == "10"
+    # other seasons and the season-less special dropped: one row, no picker
+    assert picked.season == "10" and not offered
+    # a season-less row is a first season; the marked one ranks by year
+    picked = service.resolve_work(
+        WorkQuery(title="老友记 Friends", season="1", year="1994", is_tv=True),
+        choose=lambda o: offered.append(o) or 0, log=lambda msg: None)
+    assert picked.season == "1"
+    assert offered == [["老友记 第一季 Friends", "老友记重聚特辑 Friends Reunion Special (2021)"]]
+
+
+def test_resolve_work_season_outranks_the_year(monkeypatch):
+    # Zimuku dates each season by its own air year: the release's premiere
+    # year finds only the marker-less first season, which the season filter
+    # rejects, so the ladder moves on to the bare title
+    class ByYear(FakeProvider):
+        seen = []
+
+        def find_works(self, query):
+            ByYear.seen.append(query.title)
+            s1 = zimuku_work("黑帮领地 MobLand (2025)", year="2025", url="s1")
+            s2 = zimuku_work("黑帮领地 第二季 MobLand Season 2 (2026)", season="2", year="2026", url="s2")
+            return [s1] if query.title.endswith("2025") else [s1, s2]
+
+    patch_providers(monkeypatch, {"zimuku": ByYear, "subhd": FakeProvider})
+    query = WorkQuery(title="黑帮领地", year="2025", season="2", episode="1", is_tv=True)
+    picked = service.resolve_work(query, choose=lambda o: 99, log=lambda msg: None)
+    assert ByYear.seen == ["黑帮领地 2025", "黑帮领地"]
+    assert picked.anchors["zimuku"] == "s2"
+    # the first season is pinned by the year rung itself
+    ByYear.seen = []
+    picked = service.resolve_work(replace(query, season="1"), choose=lambda o: 99, log=lambda msg: None)
+    assert ByYear.seen == ["黑帮领地 2025"] and picked.anchors["zimuku"] == "s1"
+    # a season the site lacks is not papered over with another one
+    assert service.resolve_work(replace(query, season="3"), log=lambda msg: None) is None
 
 
 def test_resolve_work_picker_paths(monkeypatch):
